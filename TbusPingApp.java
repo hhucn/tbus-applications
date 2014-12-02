@@ -11,6 +11,7 @@ import com.dcaiti.vsimrti.fed.app.enums.CamBodyType;
 import com.dcaiti.vsimrti.fed.app.messages.CAMessage;
 import com.dcaiti.vsimrti.fed.app.messages.RsuAwarenessData;
 import com.dcaiti.vsimrti.fed.app.messages.TypedV2XMessage;
+import com.dcaiti.vsimrti.fed.app.api.util.ReceivedV2XMessage;
 import com.dcaiti.vsimrti.fed.app.messages.VehicleAwarenessData;
 import com.dcaiti.vsimrti.rti.objects.MessageType;
 import org.slf4j.Logger;
@@ -44,7 +45,7 @@ public class TbusPingApp implements Application {
 	}
 
 	@Override
-	public void receiveMessage(TypedV2XMessage msg) {
+	public void receiveMessage(ReceivedV2XMessage msg) {
 		log.info("TbusPingApp Received Message!");
 	}
 

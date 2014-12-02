@@ -16,18 +16,26 @@ function error() {
 }
 
 progName=$(basename "${1}" .java)
-packageDirs=$(grep -m1 "package" "${progName}.java" | awk '{print $2}' | sed 's/\./\//g' | sed 's/\/[a-zA-Z0-9]*;//g')
+#packageDirs=$(grep -m1 "package" "${progName}.java" | awk '{print $2}' | sed 's/\./\//g' | sed 's/\/[a-zA-Z0-9]*;//g')
+packageDirs=$(grep -m1 "package" "${progName}.java" | awk '{print $2}' | sed 's/\./\//g' | sed 's/;//')
 topPackageDir=$(echo ${packageDirs} | sed 's/\/.*//')
 
 # Remove old jar file because of class path errors
-if [ -e "${progName}.jar" ]
+if [ -f "${progName}.jar" ]
 then
 	rm "${progName}.jar" || error
 fi
 
 echo -n "Building class path... "
-classPath=$(for f in $(for i in $(locate "*.jar"); do grep -Hlsi dcaiti/vsimrti/fed/app ${i}; done); do echo -n ${f}:; done)
+if [ ! -f "classpath.txt" ]
+then
+	classPath=$(for f in $(for i in $(locate "*.jar"); do grep -Hlsi dcaiti/vsimrti/fed/app ${i}; done); do echo -n ${f}:; done)
+	echo "${classPath}" > classpath.txt
+fi
+classPath=$(cat classpath.txt)
 echo "Finished."
+
+echo $packageDirs
 
 echo -n "Compiling... "
 javac -cp "${classPath}" "${progName}.java" || error
