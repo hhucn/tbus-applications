@@ -46,7 +46,7 @@ public class TbusPingApp implements Application {
 
 	@Override
 	public void receiveMessage(ReceivedV2XMessage msg) {
-		log.info("TbusPingApp Received Message " + msg.getMessage().getClassName() + "!");
+		log.info("TbusPingApp Received Message "  + msg.getMessage().getClassName() + "!");
 	}
 
 	@Override
