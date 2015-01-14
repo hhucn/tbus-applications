@@ -51,7 +51,11 @@ public class TbusPingApp implements Application {
 
 	@Override
 	public void timerCall(long time) {
+		if (!safeTimer.checkTimer(time)) {
+			return;
+		}
 		log.info("TbusPingApp timer call!");
+		
 	}
 
 	@Override
