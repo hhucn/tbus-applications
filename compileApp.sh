@@ -26,7 +26,7 @@ then
 	rm "${progName}.jar" || error
 fi
 
-echo -n "Building class path... "
+echo -en "Building class path...\t"
 if [ ! -f "classpath.txt" ]
 then
 	classPath=$(for f in $(for i in $(locate "*.jar"); do grep -Hlsi dcaiti/vsimrti/fed/app ${i}; done); do echo -n ${f}:; done)
@@ -35,18 +35,16 @@ fi
 classPath=$(cat classpath.txt)
 echo "Finished."
 
-echo $packageDirs
-
-echo -n "Compiling... "
+echo -en "Compiling...\t\t"
 javac -cp "${classPath}" "${progName}.java" || error
 echo "Finished."
 
-echo -n "Creating jar... "
+echo -en "Creating jar...\t\t"
 mkdir -p "./${packageDirs}" || error
 mv "${progName}.class" "./${packageDirs}/" || error
 jar -cf "${progName}.jar" "${topPackageDir}" || error
 echo "Finished"
 
-echo -n "Cleaning up... "
+echo -en "Cleaning up...\t\t"
 rm -r "./${topPackageDir}" || error
 echo "Finished."
