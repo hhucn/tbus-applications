@@ -3,12 +3,12 @@
  */
 package de.hhu.tbus.applications.testapp;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
 import java.util.LinkedList;
 import java.util.Queue;
 
-import org.slf4j.Logger;
-
-import com.dcaiti.vsimrti.fed.app.api.helper.SafeTimerLong;
 import com.dcaiti.vsimrti.fed.app.api.interfaces.Application;
 import com.dcaiti.vsimrti.fed.app.api.interfaces.ApplicationLayer;
 import com.dcaiti.vsimrti.fed.app.api.interfaces.CommunicationModule;
@@ -18,95 +18,63 @@ import com.dcaiti.vsimrti.rti.objects.address.SourceAddressContainer;
 import com.dcaiti.vsimrti.rti.objects.address.TopologicalDestinationAddress;
 import com.dcaiti.vsimrti.rti.objects.v2x.MessageRouting;
 import com.dcaiti.vsimrti.rti.objects.v2x.V2XMessage;
-
 import de.hhu.tbus.applications.testapp.message.TbusTestMessage;
 
 /**
  * @author bialon
  *
  */
-public class TestApp implements Application {
+public class TestApp extends TbusApplication implements Application {
 	
-	private long minimalTimerCallInterval = 0;
-	private final SafeTimerLong safeTimer = new SafeTimerLong(this);
-	
-	private Queue<Long> eventTimes = new LinkedList<Long>();
 	private Queue<TbusTestMessage> eventMessages = new LinkedList<TbusTestMessage>();
-	
-	private ApplicationLayer appLayer;
 	private CommunicationModule comMod;
-	private Logger log;
 
-	/**
-	 * @see com.dcaiti.vsimrti.fed.app.api.interfaces.TimerCall#getMinimalTimerCallInterval()
-	 */
-	@Override
-	public long getMinimalTimerCallInterval() {
-		return minimalTimerCallInterval;
+	protected void timerAction(long time) {
+		log.info("Timer called at " + time);
+		if (!eventMessages.isEmpty()) {
+			comMod.sendV2XMessage(eventMessages.poll());
+		}
 	}
 	
-	/**
-	 * Retrieves the next event from eventTimes, updates the safe timer and triggers a timer update
-	 * @param currentSimTime current simulation time
-	 */
-	private void setNextEvent(long currentSimTime) {
-		long nextInterval = 0;
-		
-		if (!eventTimes.isEmpty()) {
-			nextInterval = eventTimes.poll() - currentSimTime;
-		}
-		
-		minimalTimerCallInterval = nextInterval;
-		
-		safeTimer.reset();
-		appLayer.triggerTimerCallUpdate();
-	}
-
-	/**
-	 * @see com.dcaiti.vsimrti.fed.app.api.interfaces.TimerCall#timerCall(long)
-	 */
-	@Override
-	public void timerCall(long time) {
-		// Only respond to our timer calls
-		if (!safeTimer.checkTimer(time)) {
-			return;
-		}
-		setNextEvent(time);
-		
-		TbusTestMessage msg = eventMessages.poll();
-		
-		if (msg == null) {
-			log.error("Got null message from queue, discarding...");
-			return;
-		}
-		
-		// Send message to network simulator
-		comMod.sendV2XMessage(msg);
-	}
-
 	/**
 	 * @see com.dcaiti.vsimrti.fed.app.api.interfaces.Application#dispose()
 	 */
 	@Override
-	public void dispose() {
-		// TODO Auto-generated method stub
-
-	}
+	public void dispose() {}
 
 	/**
 	 * @see com.dcaiti.vsimrti.fed.app.api.interfaces.Application#initialize(com.dcaiti.vsimrti.fed.app.api.interfaces.ApplicationLayer)
 	 */
 	@Override
 	public void initialize(ApplicationLayer appLayer) {
-		this.appLayer = appLayer;
-		this.comMod   = appLayer.getApplicationToFacility().getCommunicationModuleReference();
-		this.log      = appLayer.getApplicationToFacility().getLogger();
+		super.initialize(appLayer);
 		
-//		byte[] destination = {0,0,0,1};
-		DestinationAddressContainer dac = DestinationAddressContainer.createTopologicalDestinationAddressAdHoc(new TopologicalDestinationAddress(new byte[] {0,0,0,1}));//destination, 1));
+		this.comMod = appLayer.getApplicationToFacility().getCommunicationModuleReference();
+		
+		// Set the TTL to 1 because VSimRTI can't handle other TTLs at the moment
+		TopologicalDestinationAddress tda = new TopologicalDestinationAddress(new byte[] {0,0,0,0}, 1);
+		
+		DestinationAddressContainer dac = DestinationAddressContainer.createTopologicalDestinationAddressAdHoc(tda);
 		SourceAddressContainer sac = appLayer.getApplicationToFacility().generateSourceAddressContainer();
 		
 		MessageRouting routing = new MessageRouting(dac, sac);
+		
+		// TODO: Open file
+		File file = null;
+		
+		try {
+			BufferedReader br = new BufferedReader(new FileReader(file));
+			String line;
+			
+			while ((line = br.readLine()) != null) {
+				String[] properties = line.split(",");
+				
+				// TODO:
+				// Create message from properties and add message and event time into queues
+			}
+		} catch (Exception ex) {
+			log.error("Unable to read CSV file");
+		}
 		
 		TbusTestMessage msg1 = new TbusTestMessage(
 				routing,
@@ -125,14 +93,14 @@ public class TestApp implements Application {
 				1,
 				1,
 				728);
-		
-		eventTimes.add(10000000000L);
+
+		addEvent(10000000000L);
 		eventMessages.add(msg1);
 		
-		eventTimes.add(15000000000L);
+		addEvent(15000000000L);
 		eventMessages.add(msg2);
 		
-		setNextEvent(appLayer.getApplicationToFacility().getPoolAccessReference().)
+		start();
 	}
 
 	/**
