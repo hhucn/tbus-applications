@@ -142,4 +142,17 @@ public class TbusTestMessage extends V2XMessage {
 		return encodedV2XMessage;
 	}
 
+	/**
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return "TbusTestMessage [sendTimestamp=" + sendTimestamp
+				+ ", recvTimestamp=" + recvTimestamp + ", seqNr=" + seqNr
+				+ ", packetNr=" + packetNr + ", totalPacketNr=" + totalPacketNr
+				+ ", payloadSize=" + payloadSize + "]";
+	}
+	
+	
+
 }

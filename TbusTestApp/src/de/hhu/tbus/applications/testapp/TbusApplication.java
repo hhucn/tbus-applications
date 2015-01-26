@@ -44,6 +44,7 @@ public abstract class TbusApplication implements Application {
 		if (diff < 0) {
 			// Next event is in the past, we stop setting our timers here
 			currentTimerCallInterval = 0L;
+			log.info("Stopped timer, event " + currentEventTime + " is in the past (current time: " + currentTime + ")");
 		} else {
 			// Instead of log_10(diff) we use the string length for exponent calculation
 			int exp = Long.toString(diff).length() - 1;
@@ -90,12 +91,21 @@ public abstract class TbusApplication implements Application {
 	@Override
 	public void dispose() {}
 
+	/**
+	 * Start event scheduling
+	 */
 	protected final void start() {
-		if (!eventTimes.isEmpty()) {
+		long currentTime = appLayer.getApplicationToFacility().getPoolAccessReference().getBasicProviderReference().getCurrentTime();
+		int discardedMessages = 0;
+		
+		while (!eventTimes.isEmpty() && currentEventTime <= (currentTime + currentTimerCallInterval)) {
 			currentEventTime = eventTimes.poll();
+			discardedMessages++;
 		}
 		
-		updateTimerCallInterval(appLayer.getApplicationToFacility().getPoolAccessReference().getBasicProviderReference().getCurrentTime());
+		log.info(currentTime + ": Discarded " + discardedMessages + " messages because of too early start time, starting with event at time " + currentEventTime);
+		
+		updateTimerCallInterval(currentTime);
 	}
 	
 	/**
