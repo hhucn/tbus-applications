@@ -41,8 +41,6 @@ public class TestApp extends TbusApplication implements Application {
 	 * @see de.hhu.tbus.applications.testapp.TbusApplication#timerAction(long)
 	 */
 	protected void timerAction(long time) {
-		log.info("Timer called at " + time);
-
 		while (!eventMessages.isEmpty()) {
 			if (eventMessages.peek().getSendTimestamp() == time) {
 				comMod.sendV2XMessage(eventMessages.poll());

@@ -60,9 +60,10 @@ public class TbusReceiverApp implements Application {
 		
 		if (msg instanceof TbusTestMessage) {
 			tbusMsg = (TbusTestMessage) msg;
+			long diff = recMsg.getTime() - tbusMsg.getRecvTimestamp();
 			
 			log.info("Received at " + recMsg.getTime() + ": " + tbusMsg);
-			log.info("Difference: " + (Math.abs(recMsg.getTime() - tbusMsg.getRecvTimestamp())) + "ns");
+			log.info("Difference: " + diff + "ns (" + ((double) diff / 1000000000) + "s)");
 		}
 	}
 
