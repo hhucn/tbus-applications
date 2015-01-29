@@ -75,7 +75,7 @@ public class TestApp extends TbusApplication implements Application {
 		
 		MessageRouting routing = new MessageRouting(dac, sac);
 
-		File file = new File("/home/bialon/data/tbus-2012-09-17-nach-datenratenanhebung-bei-loss/1010/downloadpackets.txt");
+		File file = new File("/home/bialon/data/tbus-2012-09-17-nach-datenratenanhebung-bei-loss/1010/uploadpackets.txt");
 		BufferedReader br = null;
 		
 		try {
@@ -114,6 +114,18 @@ public class TestApp extends TbusApplication implements Application {
 		}
 		
 		log.info("Added " + eventMessages.size() + " events and messages to the queue!");
+		
+//		TbusTestMessage msg = new TbusTestMessage(
+//				routing,
+//				5500000000L,
+//				8000000000L,
+//				1,
+//				1,
+//				1,
+//				1024);
+//		
+//		addEvent(5500000000L);
+//		eventMessages.add(msg);
 		
 		start();
 	}

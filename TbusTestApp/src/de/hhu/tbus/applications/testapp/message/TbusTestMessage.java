@@ -24,6 +24,7 @@ public class TbusTestMessage extends V2XMessage {
 	 * Serialization version UID
 	 */
 	private static final long serialVersionUID = 1L;
+	private static final int udpAndIpHeaderLength = 28;
 	
 	/**
 	 * Encoded V2XMessage
@@ -56,9 +57,10 @@ public class TbusTestMessage extends V2XMessage {
 		this.seqNr = seqNr;
 		this.packetNr = packetNr;
 		this.totalPacketNr = totalPacketNr;
-		this.payloadSize = payloadSize;
+		// Subtract remaining header lengths, so that our packet has exactly this payload
+		this.payloadSize = payloadSize - udpAndIpHeaderLength;
 		
-		int remainingPayloadSize = payloadSize - 8 - 8 - 4 - 4 - 4 - 4;
+		int remainingPayloadSize = this.payloadSize - 8 - 8 - 4 - 4 - 4 - 4;
 		remainingPayloadSize = (remainingPayloadSize < 0) ? 0 : remainingPayloadSize;
 		
 		// Create payload with remaining size and fill with random data
