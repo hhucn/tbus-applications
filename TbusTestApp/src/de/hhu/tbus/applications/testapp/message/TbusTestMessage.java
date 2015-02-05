@@ -24,7 +24,7 @@ public class TbusTestMessage extends V2XMessage {
 	 * Serialization version UID
 	 */
 	private static final long serialVersionUID = 1L;
-	private static final int udpAndIpHeaderLength = 28;
+//	private static final int udpAndIpHeaderLength = 28;
 	
 	/**
 	 * Encoded V2XMessage
@@ -38,6 +38,8 @@ public class TbusTestMessage extends V2XMessage {
 	private final int totalPacketNr;
 	private final int payloadSize;
 	private final byte[] payload;
+	
+	private long realRecvTimestamp;
 
 	/**
 	 * Initialize a new TbusTestMessage
@@ -58,7 +60,7 @@ public class TbusTestMessage extends V2XMessage {
 		this.packetNr = packetNr;
 		this.totalPacketNr = totalPacketNr;
 		// Subtract remaining header lengths, so that our packet has exactly this payload
-		this.payloadSize = payloadSize - udpAndIpHeaderLength;
+		this.payloadSize = payloadSize;// - udpAndIpHeaderLength;
 		
 		int remainingPayloadSize = this.payloadSize - 8 - 8 - 4 - 4 - 4 - 4;
 		remainingPayloadSize = (remainingPayloadSize < 0) ? 0 : remainingPayloadSize;
@@ -153,6 +155,20 @@ public class TbusTestMessage extends V2XMessage {
 				+ ", recvTimestamp=" + recvTimestamp + ", seqNr=" + seqNr
 				+ ", packetNr=" + packetNr + ", totalPacketNr=" + totalPacketNr
 				+ ", payloadSize=" + payloadSize + "]";
+	}
+
+	/**
+	 * @return the realRecvTimestamp
+	 */
+	public long getRealRecvTimestamp() {
+		return realRecvTimestamp;
+	}
+
+	/**
+	 * @param realRecvTimestamp the realRecvTimestamp to set
+	 */
+	public void setRealRecvTimestamp(long realRecvTimestamp) {
+		this.realRecvTimestamp = realRecvTimestamp;
 	}
 	
 	

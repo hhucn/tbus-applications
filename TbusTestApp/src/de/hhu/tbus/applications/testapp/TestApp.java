@@ -47,7 +47,7 @@ public class TestApp extends TbusApplication implements Application {
 				break;
 			}
 			
-			log.info("Discarding message (Train: " + eventMessages.peek().getSeqNr() + ", Packet: " + eventMessages.peek().getPacketNr() + ")");
+			log.info("Discarding message (SendTimestamp: " + eventMessages.peek().getSendTimestamp() + "ns (Difference: " + (time  - eventMessages.peek().getSendTimestamp()) + " Train: " + eventMessages.peek().getSeqNr() + ", Packet: " + eventMessages.peek().getPacketNr() + ")");
 			eventMessages.poll();
 		}
 	}
@@ -75,7 +75,7 @@ public class TestApp extends TbusApplication implements Application {
 		
 		MessageRouting routing = new MessageRouting(dac, sac);
 
-		File file = new File("/home/bialon/data/tbus-2012-09-17-nach-datenratenanhebung-bei-loss/1010/uploadpackets.txt");
+		File file = new File("/home/bialon/data/20140217_1-only-trainsize-on-lost-trains/1010/packets.txt.0.upload");//uploadpackets.txt");
 		BufferedReader br = null;
 		
 		try {
@@ -93,11 +93,13 @@ public class TestApp extends TbusApplication implements Application {
 				TbusTestMessage msg = new TbusTestMessage(
 						routing,
 						sendTimestamp,
-						Long.parseLong(properties[1]),
-						Integer.parseInt(properties[2]),
-						Integer.parseInt(properties[3]),
-						Integer.parseInt(properties[4]),
-						Integer.parseInt(properties[5]));
+						Long.parseLong(properties[2]),
+						Integer.parseInt(properties[10]),
+						Integer.parseInt(properties[11]),
+						Integer.parseInt(properties[12]),
+						Integer.parseInt(properties[9]));
+				
+				msg.setRealRecvTimestamp(Long.parseLong(properties[1]));
 				
 				addEvent(sendTimestamp);
 				eventMessages.add(msg);
@@ -125,6 +127,18 @@ public class TestApp extends TbusApplication implements Application {
 //				1024);
 //		
 //		addEvent(5500000000L);
+//		eventMessages.add(msg);
+//		
+//		msg = new TbusTestMessage(
+//				routing,
+//				6000000000L,
+//				8500000000L,
+//				1,
+//				1,
+//				1,
+//				1024);
+//		
+//		addEvent(6000000000L);
 //		eventMessages.add(msg);
 		
 		start();

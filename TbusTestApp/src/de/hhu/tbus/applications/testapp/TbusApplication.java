@@ -23,7 +23,6 @@ public abstract class TbusApplication implements Application {
 	private long currentTimerCallInterval = 1000000000L;
 	private long currentEventTime = 0L;
 	private Queue<Long> eventTimes = new LinkedList<Long>();
-	private boolean send = false;
 	
 	/**
 	 * @see com.dcaiti.vsimrti.fed.app.api.interfaces.TimerCall#getMinimalTimerCallInterval()
@@ -71,11 +70,8 @@ public abstract class TbusApplication implements Application {
 	@Override
 	public final void timerCall(long time) {
 		if (time == currentEventTime) {
-//			if (!send) {
-				// Call TBUS application timer handling
-				timerAction(time);
-//				eventTimes.clear();
-//			}
+			// Call TBUS application timer handling
+			timerAction(time);
 		}
 		
 		// Update event if necessary 
