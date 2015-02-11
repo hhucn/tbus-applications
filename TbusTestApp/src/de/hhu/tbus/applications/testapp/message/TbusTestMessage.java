@@ -37,7 +37,7 @@ public class TbusTestMessage extends V2XMessage {
 	private final int packetNr;
 	private final int totalPacketNr;
 	private final int payloadSize;
-	private final byte[] payload;
+	private byte[] payload;
 	
 	private long realRecvTimestamp;
 
@@ -86,6 +86,14 @@ public class TbusTestMessage extends V2XMessage {
 		}
 		
 		encodedV2XMessage = new EncodedV2XMessage(byteArrayOut.toByteArray());
+		payload = null;
+		
+		try {
+			dataOut.close();
+			byteArrayOut.close();
+		} catch (IOException ex) {
+			System.out.println("Cannot close output streams: " + ex.getLocalizedMessage());
+		}
 	}
 
 	/**

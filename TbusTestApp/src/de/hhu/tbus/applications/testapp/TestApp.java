@@ -25,7 +25,6 @@ import de.hhu.tbus.applications.testapp.message.TbusTestMessage;
  *
  */
 public class TestApp extends TbusApplication implements Application {
-	
 	/**
 	 * Event message queue
 	 */
@@ -41,14 +40,9 @@ public class TestApp extends TbusApplication implements Application {
 	 * @see de.hhu.tbus.applications.testapp.TbusApplication#timerAction(long)
 	 */
 	protected void timerAction(long time) {
-		while (!eventMessages.isEmpty()) {
-			if (eventMessages.peek().getSendTimestamp() == time) {
-				comMod.sendV2XMessage(eventMessages.poll());
-				break;
-			}
-			
-			log.info("Discarding message (SendTimestamp: " + eventMessages.peek().getSendTimestamp() + "ns (Difference: " + (time  - eventMessages.peek().getSendTimestamp()) + " Train: " + eventMessages.peek().getSeqNr() + ", Packet: " + eventMessages.peek().getPacketNr() + ")");
-			eventMessages.poll();
+		while (!eventMessages.isEmpty() && eventMessages.peek().getSendTimestamp() <= time) {			
+			log.info("Sending message (SendTimestamp: " + eventMessages.peek().getSendTimestamp() + "ns (Difference: " + (time  - eventMessages.peek().getSendTimestamp()) + " Train: " + eventMessages.peek().getSeqNr() + ", Packet: " + eventMessages.peek().getPacketNr() + ")");
+			comMod.sendV2XMessage(eventMessages.poll());
 		}
 	}
 	
@@ -56,7 +50,9 @@ public class TestApp extends TbusApplication implements Application {
 	 * @see com.dcaiti.vsimrti.fed.app.api.interfaces.Application#dispose()
 	 */
 	@Override
-	public void dispose() {}
+	public void dispose() {
+		eventMessages.clear();
+	}
 
 	/**
 	 * @see com.dcaiti.vsimrti.fed.app.api.interfaces.Application#initialize(com.dcaiti.vsimrti.fed.app.api.interfaces.ApplicationLayer)
@@ -68,14 +64,14 @@ public class TestApp extends TbusApplication implements Application {
 		this.comMod = appLayer.getApplicationToFacility().getCommunicationModuleReference();
 		
 		// Set the TTL to 1 because VSimRTI can't handle other TTLs at the moment
-		TopologicalDestinationAddress tda = new TopologicalDestinationAddress(new byte[] {1,0,0,0}, 1);
+		TopologicalDestinationAddress tda = new TopologicalDestinationAddress(new byte[] {0,0,0,0}, 1);
 		
 		DestinationAddressContainer dac = DestinationAddressContainer.createTopologicalDestinationAddressAdHoc(tda);
 		SourceAddressContainer sac = appLayer.getApplicationToFacility().generateSourceAddressContainer();
 		
 		MessageRouting routing = new MessageRouting(dac, sac);
 
-		File file = new File("/home/bialon/data/20140217_1-only-trainsize-on-lost-trains/1010/packets.txt.0.upload");//uploadpackets.txt");
+		File file = new File("/home/bialon/data/20140217_1-only-trainsize-on-lost-trains/1010/packets.txt.0.download.sorted");//uploadpackets.txt");
 		BufferedReader br = null;
 		
 		try {
@@ -116,30 +112,6 @@ public class TestApp extends TbusApplication implements Application {
 		}
 		
 		log.info("Added " + eventMessages.size() + " events and messages to the queue!");
-		
-//		TbusTestMessage msg = new TbusTestMessage(
-//				routing,
-//				5500000000L,
-//				8000000000L,
-//				1,
-//				1,
-//				1,
-//				1024);
-//		
-//		addEvent(5500000000L);
-//		eventMessages.add(msg);
-//		
-//		msg = new TbusTestMessage(
-//				routing,
-//				6000000000L,
-//				8500000000L,
-//				1,
-//				1,
-//				1,
-//				1024);
-//		
-//		addEvent(6000000000L);
-//		eventMessages.add(msg);
 		
 		start();
 	}

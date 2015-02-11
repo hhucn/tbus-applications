@@ -22,7 +22,8 @@ public class TbusReceiverApp implements Application {
 	private Logger log;
 	
 	private class TbusAggregation {
-		public int firstPacketNr;
+		public int packetsArrived;
+		public int packetsSend;
 		public long firstPacketDelay;
 		public int lastPacketNr;
 		public long lastPacketDelay;
@@ -50,9 +51,15 @@ public class TbusReceiverApp implements Application {
 	 */
 	@Override
 	public void dispose() {
+		TbusAggregation stat;
+		log.info("====================================== Rx Statistics ======================================");
 		for (Integer key: statistics.keySet()) {
-			log.info("Statistics: Sequence " + key + " first delay " + statistics.get(key).firstPacketDelay + " last delay " + statistics.get(key).lastPacketDelay);
+			stat = statistics.get(key);
+			log.info("Statistics: Sequence " + key + " first delay " + stat.firstPacketDelay + " last delay " + stat.lastPacketDelay + " droprate " + (1.0 - ((double) stat.packetsArrived / stat.packetsSend)));
 		}
+		log.info("==================================== End Rx Statistics ====================================");
+		
+		statistics.clear();
 	}
 
 	/**
@@ -83,17 +90,20 @@ public class TbusReceiverApp implements Application {
 			
 			// Aggregate statistics
 			if (statistics.containsKey(tbusMsg.getSeqNr())) {
-				if (tbusMsg.getPacketNr() > statistics.get(tbusMsg.getSeqNr()).lastPacketNr) {
-					TbusAggregation stat = statistics.get(tbusMsg.getSeqNr());
+				TbusAggregation stat = statistics.get(tbusMsg.getSeqNr());
+				if (tbusMsg.getPacketNr() > stat.lastPacketNr) {
 					stat.lastPacketNr = tbusMsg.getPacketNr();
 					stat.lastPacketDelay = diff;
 				}
+				// Increment packets arrived
+				stat.packetsArrived++;
 			} else {
 				TbusAggregation stat = new TbusAggregation();
 				stat.firstPacketDelay = diff;
 				stat.lastPacketDelay = diff;
-				stat.firstPacketNr = tbusMsg.getPacketNr();
 				stat.lastPacketNr = tbusMsg.getPacketNr();
+				stat.packetsSend = tbusMsg.getTotalPacketNr();
+				stat.packetsArrived = 1;
 				
 				statistics.put(tbusMsg.getSeqNr(), stat);
 			}

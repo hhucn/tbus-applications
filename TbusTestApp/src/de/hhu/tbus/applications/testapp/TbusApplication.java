@@ -89,21 +89,23 @@ public abstract class TbusApplication implements Application {
 	 * @see com.dcaiti.vsimrti.fed.app.api.interfaces.Application#dispose()
 	 */
 	@Override
-	public void dispose() {}
+	public void dispose() {
+		eventTimes.clear();
+	}
 
 	/**
 	 * Start event scheduling
 	 */
 	protected final void start() {
 		long currentTime = appLayer.getApplicationToFacility().getPoolAccessReference().getBasicProviderReference().getCurrentTime();
-		int discardedMessages = 0;
+		int discardedEvents = 0;
 		
 		while (!eventTimes.isEmpty() && currentEventTime <= (currentTime + currentTimerCallInterval)) {
 			currentEventTime = eventTimes.poll();
-			discardedMessages++;
+			discardedEvents++;
 		}
 		
-		log.info(currentTime + ": Discarded " + discardedMessages + " messages because of too early start time, starting with event at time " + currentEventTime);
+		log.info(currentTime + ": Discarded " + discardedEvents + " events because of too early start time, starting with event at time " + currentEventTime);
 		
 		updateTimerCallInterval(currentTime);
 	}
