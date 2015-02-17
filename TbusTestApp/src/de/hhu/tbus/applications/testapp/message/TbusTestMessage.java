@@ -62,38 +62,40 @@ public class TbusTestMessage extends V2XMessage {
 		// Subtract remaining header lengths, so that our packet has exactly this payload
 		this.payloadSize = payloadSize;// - udpAndIpHeaderLength;
 		
-		int remainingPayloadSize = this.payloadSize - 8 - 8 - 4 - 4 - 4 - 4;
-		remainingPayloadSize = (remainingPayloadSize < 0) ? 0 : remainingPayloadSize;
+		encodedV2XMessage = new EncodedV2XMessage(payloadSize);
 		
-		// Create payload with remaining size and fill with random data
-		payload = new byte[remainingPayloadSize];
-		new Random().nextBytes(payload);
-
-		// Open outputstreams for encoded message creation
-		final ByteArrayOutputStream byteArrayOut = new ByteArrayOutputStream();
-		final DataOutputStream dataOut = new DataOutputStream(byteArrayOut);
-		
-		try {
-			dataOut.writeLong(sendTimestamp);
-			dataOut.writeLong(recvTimestamp);
-			dataOut.writeInt(seqNr);
-			dataOut.writeInt(packetNr);
-			dataOut.writeInt(totalPacketNr);
-			dataOut.writeInt(remainingPayloadSize);
-			dataOut.write(payload);
-		} catch (IOException ex) {
-			System.out.println("Cannot write to output stream: " + ex.getLocalizedMessage());
-		}
-		
-		encodedV2XMessage = new EncodedV2XMessage(byteArrayOut.toByteArray());
-		payload = null;
-		
-		try {
-			dataOut.close();
-			byteArrayOut.close();
-		} catch (IOException ex) {
-			System.out.println("Cannot close output streams: " + ex.getLocalizedMessage());
-		}
+//		int remainingPayloadSize = this.payloadSize - 8 - 8 - 4 - 4 - 4 - 4;
+//		remainingPayloadSize = (remainingPayloadSize < 0) ? 0 : remainingPayloadSize;
+//		
+//		// Create payload with remaining size and fill with random data
+//		payload = new byte[remainingPayloadSize];
+//		new Random().nextBytes(payload);
+//
+//		// Open outputstreams for encoded message creation
+//		final ByteArrayOutputStream byteArrayOut = new ByteArrayOutputStream();
+//		final DataOutputStream dataOut = new DataOutputStream(byteArrayOut);
+//		
+//		try {
+//			dataOut.writeLong(sendTimestamp);
+//			dataOut.writeLong(recvTimestamp);
+//			dataOut.writeInt(seqNr);
+//			dataOut.writeInt(packetNr);
+//			dataOut.writeInt(totalPacketNr);
+//			dataOut.writeInt(remainingPayloadSize);
+//			dataOut.write(payload);
+//		} catch (IOException ex) {
+//			System.out.println("Cannot write to output stream: " + ex.getLocalizedMessage());
+//		}
+//		
+//		encodedV2XMessage = new EncodedV2XMessage(byteArrayOut.toByteArray());
+//		payload = null;
+//		
+//		try {
+//			dataOut.close();
+//			byteArrayOut.close();
+//		} catch (IOException ex) {
+//			System.out.println("Cannot close output streams: " + ex.getLocalizedMessage());
+//		}
 	}
 
 	/**
@@ -179,6 +181,9 @@ public class TbusTestMessage extends V2XMessage {
 		this.realRecvTimestamp = realRecvTimestamp;
 	}
 	
-	
+	@Override
+	public void finalize() {
+		System.out.println("Destroying TbusTestMessage with id " + this.getId());
+	}
 
 }

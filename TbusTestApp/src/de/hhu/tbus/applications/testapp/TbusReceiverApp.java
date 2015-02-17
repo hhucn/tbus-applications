@@ -29,7 +29,7 @@ public class TbusReceiverApp implements Application {
 		public long lastPacketDelay;
 	}
 	
-	private HashMap<Integer, TbusAggregation> statistics = new HashMap<Integer, TbusAggregation>(60);
+	private HashMap<Integer, TbusAggregation> statistics = new HashMap<Integer, TbusAggregation>();
 
 	/**
 	 * @see com.dcaiti.vsimrti.fed.app.api.interfaces.TimerCall#getMinimalTimerCallInterval()

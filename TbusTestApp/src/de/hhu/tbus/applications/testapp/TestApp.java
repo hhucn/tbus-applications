@@ -33,6 +33,16 @@ public class TestApp extends TbusApplication implements Application {
 	 * Lower layer communication module
 	 */
 	private CommunicationModule comMod;
+	
+	/**
+	 * File buffered reader
+	 */
+	private BufferedReader br;
+	
+	/**
+	 * Path to packet information file
+	 */
+	private static final String path = "/home/bialon/data/20140217_1-only-trainsize-on-lost-trains/1010/packets.txt.0.download.sorted";
 
 	/**
 	 * Called upon timerCall from TbusApplication
@@ -43,6 +53,20 @@ public class TestApp extends TbusApplication implements Application {
 		while (!eventMessages.isEmpty() && eventMessages.peek().getSendTimestamp() <= time) {			
 			log.info("Sending message (SendTimestamp: " + eventMessages.peek().getSendTimestamp() + "ns (Difference: " + (time  - eventMessages.peek().getSendTimestamp()) + " Train: " + eventMessages.peek().getSeqNr() + ", Packet: " + eventMessages.peek().getPacketNr() + ")");
 			comMod.sendV2XMessage(eventMessages.poll());
+			
+			// Create new message (if possible)
+			String line;
+			try {
+				if ((line = br.readLine()) != null) {
+					TbusTestMessage msg = createMessage(line);
+					
+					addEvent(msg.getSendTimestamp());
+					eventMessages.add(msg);
+				}
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 	}
 	
@@ -51,6 +75,12 @@ public class TestApp extends TbusApplication implements Application {
 	 */
 	@Override
 	public void dispose() {
+		try {
+			if (br != null) br.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
 		eventMessages.clear();
 	}
 
@@ -61,18 +91,9 @@ public class TestApp extends TbusApplication implements Application {
 	public void initialize(ApplicationLayer appLayer) {
 		super.initialize(appLayer);
 		
-		this.comMod = appLayer.getApplicationToFacility().getCommunicationModuleReference();
-		
-		// Set the TTL to 1 because VSimRTI can't handle other TTLs at the moment
-		TopologicalDestinationAddress tda = new TopologicalDestinationAddress(new byte[] {0,0,0,0}, 1);
-		
-		DestinationAddressContainer dac = DestinationAddressContainer.createTopologicalDestinationAddressAdHoc(tda);
-		SourceAddressContainer sac = appLayer.getApplicationToFacility().generateSourceAddressContainer();
-		
-		MessageRouting routing = new MessageRouting(dac, sac);
+		comMod = appLayer.getApplicationToFacility().getCommunicationModuleReference();
 
-		File file = new File("/home/bialon/data/20140217_1-only-trainsize-on-lost-trains/1010/packets.txt.0.download.sorted");//uploadpackets.txt");
-		BufferedReader br = null;
+		File file = new File(path);
 		
 		try {
 			br = new BufferedReader(new FileReader(file));
@@ -81,39 +102,58 @@ public class TestApp extends TbusApplication implements Application {
 			while ((line = br.readLine()) != null) {
 				if (line.startsWith("#")) {
 					continue;
+				} else {
+					break;
 				}
-				
-				String[] properties = line.split(",");
-				
-				Long sendTimestamp = Long.parseLong(properties[0]);
-				TbusTestMessage msg = new TbusTestMessage(
-						routing,
-						sendTimestamp,
-						Long.parseLong(properties[2]),
-						Integer.parseInt(properties[10]),
-						Integer.parseInt(properties[11]),
-						Integer.parseInt(properties[12]),
-						Integer.parseInt(properties[9]));
-				
-				msg.setRealRecvTimestamp(Long.parseLong(properties[1]));
-				
-				addEvent(sendTimestamp);
+			}
+			
+			// Add two starting messages
+			
+			TbusTestMessage msg = createMessage(line);
+
+			addEvent(msg.getSendTimestamp());
+			eventMessages.add(msg);
+			
+			if ((line = br.readLine()) != null) {
+				msg = createMessage(line);
+
+				addEvent(msg.getSendTimestamp());
 				eventMessages.add(msg);
 			}
 		} catch (Exception ex) {
 			log.error("Unable to read CSV file");
 			ex.printStackTrace();
-		} finally {
-			try {
-				if (br != null) br.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
 		}
 		
 		log.info("Added " + eventMessages.size() + " events and messages to the queue!");
 		
 		start();
+	}
+	
+	private TbusTestMessage createMessage(String message) {
+		// Set the TTL to 1 because VSimRTI can't handle other TTLs at the moment
+		TopologicalDestinationAddress tda = new TopologicalDestinationAddress(new byte[] {0,0,0,0}, 1);
+
+		DestinationAddressContainer dac = DestinationAddressContainer.createTopologicalDestinationAddressAdHoc(tda);
+		SourceAddressContainer sac = appLayer.getApplicationToFacility().generateSourceAddressContainer();
+
+		MessageRouting routing = new MessageRouting(dac, sac);
+				
+		String[] properties = message.split(",");
+		
+		Long sendTimestamp = Long.parseLong(properties[0]);
+		TbusTestMessage msg = new TbusTestMessage(
+				routing,
+				sendTimestamp,
+				Long.parseLong(properties[2]),
+				Integer.parseInt(properties[10]),
+				Integer.parseInt(properties[11]),
+				Integer.parseInt(properties[12]),
+				Integer.parseInt(properties[9]));
+		
+		msg.setRealRecvTimestamp(Long.parseLong(properties[1]));
+		
+		return msg;
 	}
 
 	/**
