@@ -42,7 +42,7 @@ public class TestApp extends TbusApplication implements Application {
 	/**
 	 * Path to packet information file
 	 */
-	private static final String path = "/home/bialon/data/20140217_1-only-trainsize-on-lost-trains/1010/packets.txt.0.download.sorted";
+	private static final String path = "/opt/vsimrti/data/20140217_1-only-trainsize-on-lost-trains/1010/packets.txt.0.download.sorted";
 
 	/**
 	 * Called upon timerCall from TbusApplication

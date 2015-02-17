@@ -38,7 +38,7 @@ public class TbusConstantIntervalApp implements Application {
 	 */
 	private Queue<TbusTestMessage> messages = new LinkedList<TbusTestMessage>();
 	
-	private static final String path = "/home/bialon/data/20140217_1-only-trainsize-on-lost-trains/1010/packets.txt.0.download.sorted";
+	private static final String path = "/opt/vsimrti/data/20140217_1-only-trainsize-on-lost-trains/1010/packets.txt.0.download.sorted";
 	
 	/**
 	 * @see com.dcaiti.vsimrti.fed.app.api.interfaces.TimerCall#getMinimalTimerCallInterval()
