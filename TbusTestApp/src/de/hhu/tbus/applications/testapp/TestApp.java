@@ -107,18 +107,21 @@ public class TestApp extends TbusApplication implements Application {
 				}
 			}
 			
-			// Add two starting messages
+			// Add one starting messages
 			
 			TbusTestMessage msg = createMessage(line);
 
 			addEvent(msg.getSendTimestamp());
 			eventMessages.add(msg);
 			
-			if ((line = br.readLine()) != null) {
-				msg = createMessage(line);
+			// And add 50 more
+			for (int i = 0; i < 50; ++i) {
+				if ((line = br.readLine()) != null) {
+					msg = createMessage(line);
 
-				addEvent(msg.getSendTimestamp());
-				eventMessages.add(msg);
+					addEvent(msg.getSendTimestamp());
+					eventMessages.add(msg);
+				}
 			}
 		} catch (Exception ex) {
 			log.error("Unable to read CSV file");
