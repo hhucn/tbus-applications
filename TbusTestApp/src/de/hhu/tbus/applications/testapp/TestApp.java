@@ -50,7 +50,7 @@ public class TestApp extends TbusApplication implements Application {
 	 * @see de.hhu.tbus.applications.testapp.TbusApplication#timerAction(long)
 	 */
 	protected void timerAction(long time) {
-		while (!eventMessages.isEmpty() && eventMessages.peek().getSendTimestamp() <= time) {			
+		while (time >= 3000000000L && !eventMessages.isEmpty() && eventMessages.peek().getSendTimestamp() <= time) {			
 			log.info("Sending message (SendTimestamp: " + eventMessages.peek().getSendTimestamp() + "ns (Difference: " + (time  - eventMessages.peek().getSendTimestamp()) + " Train: " + eventMessages.peek().getSeqNr() + ", Packet: " + eventMessages.peek().getPacketNr() + ")");
 			comMod.sendV2XMessage(eventMessages.poll());
 			
