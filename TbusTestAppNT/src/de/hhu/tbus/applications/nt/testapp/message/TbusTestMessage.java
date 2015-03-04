@@ -137,10 +137,4 @@ public class TbusTestMessage extends V2XMessage {
 	public void setRealRecvTimestamp(long realRecvTimestamp) {
 		this.realRecvTimestamp = realRecvTimestamp;
 	}
-	
-	@Override
-	public void finalize() {
-		System.out.println("Destroying TbusTestMessage with id " + this.getId());
-	}
-
 }
