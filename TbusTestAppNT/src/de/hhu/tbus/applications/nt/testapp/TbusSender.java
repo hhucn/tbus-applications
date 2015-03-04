@@ -7,6 +7,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 
+import com.dcaiti.vsimrti.fed.applicationNT.ambassador.simulationUnit.applications.RoadSideUnitApplication;
 import com.dcaiti.vsimrti.fed.applicationNT.ambassador.simulationUnit.applications.VehicleApplication;
 import com.dcaiti.vsimrti.rti.eventScheduling.Event;
 import com.dcaiti.vsimrti.rti.messages.ApplicationSpecificMessage;
@@ -24,7 +25,7 @@ import de.hhu.tbus.applications.nt.testapp.message.TbusTestMessage;
  * @author bialon
  *
  */
-public class TbusSender extends VehicleApplication {
+public class TbusSender extends RoadSideUnitApplication { //VehicleApplication {
 	
 	private static final String path = "/opt/vsimrti/data/20140217_1-only-trainsize-on-lost-trains/1010/packets.txt.0.download.sorted";
 	private BufferedReader br;
@@ -41,30 +42,6 @@ public class TbusSender extends VehicleApplication {
 		currentMsg = createMessage(br.readLine());
 		getOperatingSystem().getEventManager().addEvent(new Event(currentMsg.getSendTimestamp(), this));
 	}
-
-	/**
-	 * @see com.dcaiti.vsimrti.fed.applicationNT.ambassador.simulationUnit.applications.VehicleApplication#afterUpdateConnection()
-	 */
-	@Override
-	public void afterUpdateConnection() {}
-
-	/**
-	 * @see com.dcaiti.vsimrti.fed.applicationNT.ambassador.simulationUnit.applications.VehicleApplication#afterUpdateVehicleInfo()
-	 */
-	@Override
-	public void afterUpdateVehicleInfo() {}
-
-	/**
-	 * @see com.dcaiti.vsimrti.fed.applicationNT.ambassador.simulationUnit.applications.VehicleApplication#beforeUpdateConnection()
-	 */
-	@Override
-	public void beforeUpdateConnection() {}
-
-	/**
-	 * @see com.dcaiti.vsimrti.fed.applicationNT.ambassador.simulationUnit.applications.VehicleApplication#beforeUpdateVehicleInfo()
-	 */
-	@Override
-	public void beforeUpdateVehicleInfo() {}
 
 	/**
 	 * @see com.dcaiti.vsimrti.fed.applicationNT.ambassador.simulationUnit.applications.Application#afterGetAndResetUserTaggedValue()
