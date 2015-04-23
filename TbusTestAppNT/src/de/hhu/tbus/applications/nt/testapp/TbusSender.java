@@ -8,7 +8,7 @@ import java.io.File;
 import java.io.FileReader;
 
 import com.dcaiti.vsimrti.fed.applicationNT.ambassador.simulationUnit.applications.RoadSideUnitApplication;
-import com.dcaiti.vsimrti.fed.applicationNT.ambassador.simulationUnit.applications.VehicleApplication;
+//import com.dcaiti.vsimrti.fed.applicationNT.ambassador.simulationUnit.applications.VehicleApplication;
 import com.dcaiti.vsimrti.rti.eventScheduling.Event;
 import com.dcaiti.vsimrti.rti.messages.ApplicationSpecificMessage;
 import com.dcaiti.vsimrti.rti.objects.SumoTraciByteArrayMessageResponse;
