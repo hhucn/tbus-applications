@@ -1,12 +1,11 @@
 /**
  * Implements a rudimentary Geoserver application running on a RSU
  */
-package de.hhu.tbus.applications.nt.geoserver;
+package de.hhu.tbus.applications.nt.geoserver.server;
 
 import com.dcaiti.vsimrti.fed.applicationNT.ambassador.simulationUnit.applications.RoadSideUnitApplication;
 import com.dcaiti.vsimrti.rti.eventScheduling.Event;
 import com.dcaiti.vsimrti.rti.messages.ApplicationSpecificMessage;
-import com.dcaiti.vsimrti.rti.messages.network.SendV2XMessage;
 import com.dcaiti.vsimrti.rti.objects.SumoTraciByteArrayMessageResponse;
 import com.dcaiti.vsimrti.rti.objects.address.DestinationAddress;
 import com.dcaiti.vsimrti.rti.objects.address.DestinationAddressContainer;
@@ -39,14 +38,17 @@ public class TbusGeoserver extends RoadSideUnitApplication {
 	private PreparedStatement registerStatement = null;
 	private PreparedStatement geoRadiusStatement = null;
 	
-	private final static String createTableSql = "CREATE TABLE positions (ip INTEGER(4) UNIQUE, timestamp INTEGER, longitude REAL, latitude REAL);";
+	private static DestinationAddress address = null;
+	
+	private final static String tableName = "positions";
+	private final static String createTableSql = "CREATE TABLE " + tableName + " (ip INTEGER(4) UNIQUE, timestamp INTEGER, longitude REAL, latitude REAL);";
 	
 	// 1: ip, 2: timestamp, 3: longitude, 4: latitude
-	private final static String registerStatementSql = "INSERT OR REPLACE into positions (ip, timestamp, longitude, latitude)" +
+	private final static String registerStatementSql = "INSERT OR REPLACE into " + tableName +" (ip, timestamp, longitude, latitude) " +
 			"VALUES (?, ?, ?, ?);";
-	// 1,2: other longitude, 3,4: other latitude, 5: radius, 6: timestamp now, 7: timeout
-	private final static String geoRadiusStatementSql = "SELECT ip FROM positions WHERE"+
-			"(((longitude - ?) * (longitude - ?)) + ((latitude - ?) * (latitutde - ?)) < ?) AND ((? - timestamp) <= ?);";
+	// 1,2: other longitude, 3,4: other latitude, 5,6: radius, 7: timestamp now, 8: timeout
+	private final static String geoRadiusStatementSql = "SELECT ip FROM " + tableName + " WHERE "+
+			"((((longitude - ?) * (longitude - ?)) + ((latitude - ?) * (latitude - ?))) < (? * ?)) AND ((? - timestamp) <= ?);";
 	
 	/**
 	 * @see com.dcaiti.vsimrti.rti.eventScheduling.EventProcessor#processEvent(com.dcaiti.vsimrti.rti.eventScheduling.Event)
@@ -127,6 +129,9 @@ public class TbusGeoserver extends RoadSideUnitApplication {
 		} catch (SQLException ex) {
 			getLog().error("Cannot update information from message " + msg.getId() + ", exception: " + ex.getLocalizedMessage());
 		}
+		
+		getLog().info("Updated vehicle with address " + msg.getRouting().getSourceAddressContainer().getSourceAddress().getIPv4Address() +
+				" and position (" + longitude + ", " + latitude + ") sent at " + timestamp);
 	}
 	
 	private void handleDistributeMessage(GeoDistributeMessage msg) {
@@ -146,8 +151,9 @@ public class TbusGeoserver extends RoadSideUnitApplication {
 			geoRadiusStatement.setDouble(3, latitude);
 			geoRadiusStatement.setDouble(4, latitude);
 			geoRadiusStatement.setDouble(5, radius);
-			geoRadiusStatement.setLong(6, nowTimestamp);
-			geoRadiusStatement.setLong(7, timeout);
+			geoRadiusStatement.setDouble(6, radius);
+			geoRadiusStatement.setLong(7, nowTimestamp);
+			geoRadiusStatement.setLong(8, timeout);
 			
 			ResultSet results = geoRadiusStatement.executeQuery();
 			
@@ -179,8 +185,13 @@ public class TbusGeoserver extends RoadSideUnitApplication {
 	 */
 	@Override
 	public void setUp() {
+		// Set own IP address
+		address = new DestinationAddress(getOperatingSystem().getAddress().getIPv4Address());
+		
+		final String sqliteDriver = "org.sqlite.JDBC";
+		
 		try {
-			Class.forName("SQLite.JDBCDriver");
+			Class.forName(sqliteDriver);
 			connection = DriverManager.getConnection("jdbc:sqlite::memory:");
 			
 			// Create table
@@ -192,9 +203,9 @@ public class TbusGeoserver extends RoadSideUnitApplication {
 			registerStatement = connection.prepareStatement(registerStatementSql);
 			geoRadiusStatement = connection.prepareStatement(geoRadiusStatementSql);
 		} catch (ClassNotFoundException ex) {
-			getLog().error("Class \"SQLite.JDBCDriver\" not found, exception: " + ex.getLocalizedMessage());
+			getLog().error("Class \"" + sqliteDriver + "\" not found, exception: " + ex.getMessage());
 		} catch (SQLException ex) {
-			getLog().error("Cannot open SQLite database, exception: " + ex.getLocalizedMessage());
+			getLog().error("Cannot open SQLite database, exception: " + ex.getMessage());
 		}
 	}
 
@@ -204,9 +215,9 @@ public class TbusGeoserver extends RoadSideUnitApplication {
 	@Override
 	public void tearDown() {
 		try {
-			if (connection != null) connection.close();
 			if (registerStatement != null) registerStatement.close();
 			if (geoRadiusStatement != null) geoRadiusStatement.close();
+			if (connection != null) connection.close();
 		} catch (SQLException ex) {
 			getLog().error("Error while closing database connection, exception: " + ex.getLocalizedMessage());
 		}
@@ -251,5 +262,9 @@ public class TbusGeoserver extends RoadSideUnitApplication {
 		} catch (UnknownHostException e) {
 			return null;
 		}
+	}
+	
+	public static final DestinationAddress getAddress() {
+		return address;
 	}
 }

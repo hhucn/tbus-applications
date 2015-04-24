@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.7"/>
+	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="lib" path="/home/bialon/Downloads/vsimrti-0.14.0/vsimrti/bin/ambassadors/applicationNT-ambassador-1.0.0-SNAPSHOT.jar"/>
 	<classpathentry kind="lib" path="/home/bialon/Downloads/vsimrti-0.14.0/vsimrti/bin/ambassadors/lib/applicationNT-configuration-1.0.0-SNAPSHOT.jar"/>
 	<classpathentry kind="lib" path="/home/bialon/Downloads/vsimrti-0.14.0/vsimrti/bin/ambassadors/lib/commons-configuration-1.9.jar"/>
@@ -86,5 +86,7 @@
 	<classpathentry kind="lib" path="/home/bialon/Downloads/vsimrti-0.14.0/vsimrti/bin/lib/vsimrti-configuration-1.0.2-SNAPSHOT.jar"/>
 	<classpathentry kind="lib" path="/home/bialon/Downloads/vsimrti-0.14.0/vsimrti/bin/lib/vsimrti-lib-1.0.0.jar"/>
 	<classpathentry kind="lib" path="/home/bialon/Downloads/vsimrti-0.14.0/vsimrti/bin/lib/vsimrti-messages-1.0.3-SNAPSHOT.jar"/>
+	<classpathentry kind="lib" path="sqlite-jdbc-3.7.2.jar"/>
+	<classpathentry kind="lib" path="/home/bialon/Downloads/vsimrti-0.14.0/vsimrti/bin/core/vsimrti-0.14.0-SNAPSHOT.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

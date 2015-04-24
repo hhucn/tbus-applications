@@ -11,11 +11,10 @@ import com.dcaiti.vsimrti.rti.objects.v2x.MessageRouting;
  *
  */
 public class GeoUpdateMessage extends V2XMessage {
-
 	/**
-	 * Serialization UID
+	 * 
 	 */
-	private static final long serialVersionUID = -5398921309515289291L;
+	private static final long serialVersionUID = 1L;
 	/**
 	 * Encoded V2X message for further handling
 	 */
@@ -43,7 +42,7 @@ public class GeoUpdateMessage extends V2XMessage {
 		this.timestamp = timestamp;
 		
 		// Only encode by size
-		encodedMessage = new EncodedV2XMessage((Double.SIZE * 2 + Long.SIZE * 2) / Byte.SIZE);
+		encodedMessage = new EncodedV2XMessage((Double.SIZE * 2 + Long.SIZE) / Byte.SIZE);
 	}
 	
 	/**
