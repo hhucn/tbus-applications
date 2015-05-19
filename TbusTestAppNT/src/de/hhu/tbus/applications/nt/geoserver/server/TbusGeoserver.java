@@ -154,9 +154,9 @@ public class TbusGeoserver extends RoadSideUnitApplication {
 			geoRadiusStatement.setDouble(6, radius);
 			geoRadiusStatement.setLong(7, nowTimestamp);
 			geoRadiusStatement.setLong(8, timeout);
-			
+
 			ResultSet results = geoRadiusStatement.executeQuery();
-			
+
 			while (results.next()) {
 				InetAddress destinationIp = integerToIp(results.getInt(1));
 				
@@ -170,8 +170,10 @@ public class TbusGeoserver extends RoadSideUnitApplication {
 				
 				MessageRouting routing = new MessageRouting(dac, sac);
 				
-				V2XMessage forwardMsg = embeddedMessage.createEmbeddedMessageWithRoutingAndTimestamp(routing, msgTimestamp);
+				V2XMessage forwardMsg = embeddedMessage.copy(routing, msgTimestamp);
 				getOperatingSystem().sendV2XMessage(forwardMsg);
+				
+				getLog().info("Forwarded GeoDistributeMessage content " + forwardMsg.getClass() + " to " + destinationIp + " at " + getOperatingSystem().getSimulationTime());
 			}
 			
 			results.close();
