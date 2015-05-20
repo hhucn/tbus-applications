@@ -44,7 +44,7 @@ public class TbusGeoserver extends RoadSideUnitApplication {
 	private final static String createTableSql = "CREATE TABLE " + tableName + " (ip INTEGER(4) UNIQUE, timestamp INTEGER, longitude REAL, latitude REAL);";
 	
 	// 1: ip, 2: timestamp, 3: longitude, 4: latitude
-	private final static String registerStatementSql = "INSERT OR REPLACE into " + tableName +" (ip, timestamp, longitude, latitude) " +
+	private final static String registerStatementSql = "INSERT OR REPLACE INTO " + tableName +" (ip, timestamp, longitude, latitude) " +
 			"VALUES (?, ?, ?, ?);";
 	// 1,2: other longitude, 3,4: other latitude, 5,6: radius, 7: timestamp now, 8: timeout
 	private final static String geoRadiusStatementSql = "SELECT ip FROM " + tableName + " WHERE "+
@@ -141,7 +141,7 @@ public class TbusGeoserver extends RoadSideUnitApplication {
 		long timeout = msg.getTimeout();
 		long msgTimestamp = msg.getTimestamp();
 		long nowTimestamp = getOperatingSystem().getSimulationTime();
-		int sourceIp = ipToInteger(msg.getRouting().getSourceAddressContainer().getSourceAddress().getIPv4Address());
+		InetAddress sourceIp = msg.getRouting().getSourceAddressContainer().getSourceAddress().getIPv4Address();
 		EmbeddedMessage embeddedMessage = msg.getMessage();
 		
 		// Get registered IPs within range and timeout
@@ -243,10 +243,10 @@ public class TbusGeoserver extends RoadSideUnitApplication {
 			return 0;
 		}
 		
-		result &= (bytes[3] & 0xff) << 24;
-		result &= (bytes[2] & 0xff) << 16;
-		result &= (bytes[1] & 0xff) << 8;
-		result &= (bytes[0] & 0xff);
+		result |= (bytes[3] & 0xff) << 24;
+		result |= (bytes[2] & 0xff) << 16;
+		result |= (bytes[1] & 0xff) << 8;
+		result |= (bytes[0] & 0xff);
 		
 		return result;
 	}
