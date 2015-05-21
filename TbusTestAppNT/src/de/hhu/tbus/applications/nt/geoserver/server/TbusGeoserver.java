@@ -46,9 +46,9 @@ public class TbusGeoserver extends RoadSideUnitApplication {
 	// 1: ip, 2: timestamp, 3: longitude, 4: latitude
 	private final static String registerStatementSql = "INSERT OR REPLACE INTO " + tableName +" (ip, timestamp, longitude, latitude) " +
 			"VALUES (?, ?, ?, ?);";
-	// 1,2: other longitude, 3,4: other latitude, 5,6: radius, 7: timestamp now, 8: timeout
+	// 1,2: other longitude, 3,4: other latitude, 5,6: radius
 	private final static String geoRadiusStatementSql = "SELECT ip FROM " + tableName + " WHERE "+
-			"((((longitude - ?) * (longitude - ?)) + ((latitude - ?) * (latitude - ?))) < (? * ?)) AND ((? - timestamp) <= ?);";
+			"((((longitude - ?) * (longitude - ?)) + ((latitude - ?) * (latitude - ?))) < (? * ?));";
 	
 	/**
 	 * @see com.dcaiti.vsimrti.rti.eventScheduling.EventProcessor#processEvent(com.dcaiti.vsimrti.rti.eventScheduling.Event)
@@ -138,9 +138,7 @@ public class TbusGeoserver extends RoadSideUnitApplication {
 		double longitude = msg.getLongitude();
 		double latitude = msg.getLatitude();
 		double radius = msg.getRadius();
-		long timeout = msg.getTimeout();
 		long msgTimestamp = msg.getTimestamp();
-		long nowTimestamp = getOperatingSystem().getSimulationTime();
 		InetAddress sourceIp = msg.getRouting().getSourceAddressContainer().getSourceAddress().getIPv4Address();
 		EmbeddedMessage embeddedMessage = msg.getMessage();
 		
@@ -152,8 +150,6 @@ public class TbusGeoserver extends RoadSideUnitApplication {
 			geoRadiusStatement.setDouble(4, latitude);
 			geoRadiusStatement.setDouble(5, radius);
 			geoRadiusStatement.setDouble(6, radius);
-			geoRadiusStatement.setLong(7, nowTimestamp);
-			geoRadiusStatement.setLong(8, timeout);
 
 			ResultSet results = geoRadiusStatement.executeQuery();
 

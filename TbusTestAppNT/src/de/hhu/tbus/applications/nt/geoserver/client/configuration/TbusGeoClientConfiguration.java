@@ -14,19 +14,15 @@ public class TbusGeoClientConfiguration implements Serializable {
 	 * 
 	 */
 	private static final long serialVersionUID = -2593506890841706231L;
-
-	/**
-	 * Emergency vehicle flag
-	 */
-	public boolean isEmergencyVehicle = false;
 	
 	/**
-	 * Broadcast interval
+	 *  Interval for GeoUpdate (in ns)
 	 */
 	public long interval = 1_000_000_000L;
 	
 	/**
-	 * Broadcast radius
+	 *  Offset for first GeoUpdate (in ns)
 	 */
-	public double radius = 1.0;
+	public long offset = 2_000_000_000L;
+	
 }

@@ -20,7 +20,6 @@ public class GeoDistributeMessage extends V2XMessage {
 	private final double longitude;
 	private final double latitude;
 	private final double radius;
-	private final long timeout;
 	private final long timestamp;
 	private final EncodedV2XMessage encodedMessage;
 	
@@ -32,7 +31,6 @@ public class GeoDistributeMessage extends V2XMessage {
 			double longitude,
 			double latitude,
 			double radius,
-			long timeout,
 			long timestamp,
 			MessageRouting routing) {
 		super(routing);
@@ -41,10 +39,9 @@ public class GeoDistributeMessage extends V2XMessage {
 		this.longitude = longitude;
 		this.latitude = latitude;
 		this.radius = radius;
-		this.timeout = timeout;
 		this.timestamp = timestamp;
 		
-		encodedMessage = new EncodedV2XMessage(message.getLength() + ((Double.SIZE * 3 + Long.SIZE * 2) / Byte.SIZE));
+		encodedMessage = new EncodedV2XMessage(message.getLength() + ((Double.SIZE * 3 + Long.SIZE) / Byte.SIZE));
 	}
 	/**
 	 * @return the message
@@ -69,12 +66,6 @@ public class GeoDistributeMessage extends V2XMessage {
 	 */
 	public double getRadius() {
 		return radius;
-	}
-	/**
-	 * @return the timeout
-	 */
-	public long getTimeout() {
-		return timeout;
 	}
 	/**
 	 * @return the timestamp

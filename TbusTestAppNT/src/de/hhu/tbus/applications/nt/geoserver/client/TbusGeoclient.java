@@ -1,10 +1,7 @@
 package de.hhu.tbus.applications.nt.geoserver.client;
 
-import java.io.File;
-
 import com.dcaiti.vsimrti.fed.applicationNT.ambassador.simulationUnit.applications.VehicleApplication;
 import com.dcaiti.vsimrti.fed.applicationNT.ambassador.simulationUnit.operatingSystem.OperatingSystem;
-import com.dcaiti.vsimrti.fed.applicationNT.ambassador.simulationUnit.operatingSystem.VehicleOperatingSystem;
 import com.dcaiti.vsimrti.rti.eventScheduling.Event;
 import com.dcaiti.vsimrti.rti.messages.ApplicationSpecificMessage;
 import com.dcaiti.vsimrti.rti.objects.SumoTraciByteArrayMessageResponse;
@@ -15,10 +12,9 @@ import com.dcaiti.vsimrti.rti.objects.v2x.MessageRouting;
 import com.dcaiti.vsimrti.rti.objects.v2x.ReceivedV2XMessage;
 import com.dcaiti.vsimrti.rti.objects.v2x.UnableToSendV2XMessage;
 
-import de.fraunhofer.fokus.eject.ObjectInstantiation;
+import de.hhu.tbus.applications.nt.configuration.TbusConfiguration;
 import de.hhu.tbus.applications.nt.geoserver.client.configuration.TbusGeoClientConfiguration;
 import de.hhu.tbus.applications.nt.geoserver.message.EmbeddedMessage;
-import de.hhu.tbus.applications.nt.geoserver.message.EmergencyWarningMessage;
 import de.hhu.tbus.applications.nt.geoserver.message.GeoDistributeMessage;
 import de.hhu.tbus.applications.nt.geoserver.message.GeoUpdateMessage;
 import de.hhu.tbus.applications.nt.geoserver.server.TbusGeoserver;
@@ -28,15 +24,12 @@ import de.hhu.tbus.applications.nt.geoserver.server.TbusGeoserver;
  *
  */
 public class TbusGeoclient extends VehicleApplication {
-	// Event calling interval in ns
-	private static final long interval = 1000000000L;
+
+	final static String configFilename = "GeoClientConfig";
 	
-	private static final long startTimeout = 2000000000L;
+	private static enum eventFlag {GEOUPDATE_MSG};
 	
-	private static final Integer GEOUPDATEMSG_FLAG = 1;
-	private static final Integer BROADCAST_START_FLAG = 2;
-	
-	private class BroadcastResource {
+	protected class BroadcastResource {
 		public final long interval;
 		public final double radius;
 		public final EmbeddedMessage msg;
@@ -52,20 +45,14 @@ public class TbusGeoclient extends VehicleApplication {
 	
 	private TbusGeoClientConfiguration config;
 	
-	private void initConfig() {
-		final ObjectInstantiation<TbusGeoClientConfiguration> oi = new ObjectInstantiation<TbusGeoClientConfiguration>(TbusGeoClientConfiguration.class);
-		
+	protected void initConfig() {		
 		try {
-			File appConfig = new File(getOperatingSystem().getConfigurationPath().getAbsolutePath() + File.separator + "GeoClientConfig-" + getOperatingSystem().getId() + ".json");
-			config = (TbusGeoClientConfiguration) oi.readFile(appConfig);
-			getLog().info(oi.getLogMessage());
-		} catch (InstantiationException ex) {
-			getLog().error("Cannot instantiate configuration object: ", ex);
+			config = (new TbusConfiguration<TbusGeoClientConfiguration>()).readConfiguration(TbusGeoClientConfiguration.class, configFilename, getOperatingSystem(), getLog());
+		} catch (InstantiationException | IllegalAccessException ex) {
+			getLog().error("Cannot instantiate configuration object, using default configuration: ", ex);
 			
 			config = new TbusGeoClientConfiguration();
 		}
-		
-		getLog().info("Configuration for " + getOperatingSystem().getId() + ": isEmergencyVehicle: " + config.isEmergencyVehicle + ", interval: " + config.interval);
 	}
 	
 	/**
@@ -97,7 +84,7 @@ public class TbusGeoclient extends VehicleApplication {
 	 * @param radius The geo radius for distribution
 	 * @param timeout Message timeout, message is invalidated after
 	 */
-	private void sendGeoBroadcast(EmbeddedMessage msg, double radius, long timeout) {
+	private void sendGeoBroadcast(EmbeddedMessage msg, double radius) {
 		OperatingSystem os = getOperatingSystem();
 		
 		double longitude;
@@ -112,11 +99,7 @@ public class TbusGeoclient extends VehicleApplication {
 			latitude = os.getPosition().latitude;
 		}
 		
-		DestinationAddressContainer dac = DestinationAddressContainer.createTopologicalDestinationAddressAdHoc(new TopologicalDestinationAddress(TbusGeoserver.getAddress(), 1));
-		SourceAddressContainer sac = os.generateSourceAddressContainer();
-		MessageRouting routing = new MessageRouting(dac, sac);
-		
-		GeoDistributeMessage gdm = new GeoDistributeMessage(msg, longitude, latitude, radius, timeout, os.getSimulationTime(), routing);
+		GeoDistributeMessage gdm = new GeoDistributeMessage(msg, longitude, latitude, radius, os.getSimulationTime(), getDefaultRouting());
 		os.sendV2XMessage(gdm);
 		getLog().info("Send GeoBroadcast message to (" + longitude + ", " + latitude + ") with radius " + radius + " to " + TbusGeoserver.getAddress() + " at " + os.getSimulationTime());
 	}
@@ -124,10 +107,12 @@ public class TbusGeoclient extends VehicleApplication {
 	/**
 	 * Start broadcasting a EmbeddedMessage for given interval and radius around the node 
 	 * @param msg The EmbeddedMessage to broadcast
+	 * @param offset Offset for the first broadcast
 	 * @param interval The interval to broadcast at
+	 * @param timeout The messages' timeout
 	 * @param radius The radius around the current node to broadcast at
 	 */
-	protected void startGeoBroadcast(EmbeddedMessage msg, long interval, double radius) {
+	protected void startGeoBroadcast(EmbeddedMessage msg, long offset, long interval, double radius) {
 		if (isBroadcasting) {
 			getLog().error("Starting GeoBroadcast with another broadcast already running! Aborting");
 			return;
@@ -136,7 +121,7 @@ public class TbusGeoclient extends VehicleApplication {
 		isBroadcasting = true;
 		OperatingSystem os = getOperatingSystem();
 		BroadcastResource br = new BroadcastResource(msg, interval, radius);
-		Event broadcastEvent = new Event(os.getSimulationTime(), this, br);
+		Event broadcastEvent = new Event(os.getSimulationTime() + offset, this, br);
 		
 		os.getEventManager().addEvent(broadcastEvent);
 	}
@@ -153,33 +138,41 @@ public class TbusGeoclient extends VehicleApplication {
 	 */
 	@Override
 	public void processEvent(Event evt) throws Exception {
-		VehicleOperatingSystem os = getOperatingSystem();
+		OperatingSystem os = getOperatingSystem();
 		
-		if (evt.getResource() != null) {	
-			if (evt.getResource() instanceof Integer && evt.getResource() == GEOUPDATEMSG_FLAG) {
+		if (evt.getResource() == null) {
+			return;
+		}
+		if (evt.getResource() instanceof eventFlag) {
+			switch ((eventFlag) evt.getResource()) {
+			case GEOUPDATE_MSG:
 				// Send GeoUpdate message
 				sendGeoUpdateMessage();
-				
+
 				// Set next event call
-				os.getEventManager().addEvent(new Event(os.getSimulationTime() + interval, this, GEOUPDATEMSG_FLAG));
-			} else if (evt.getResource() instanceof Integer && evt.getResource() == BROADCAST_START_FLAG) {
-				DestinationAddressContainer dac = DestinationAddressContainer.createTopologicalDestinationAddressAdHoc(new TopologicalDestinationAddress(TbusGeoserver.getAddress(), 1));
-				SourceAddressContainer sac = getOperatingSystem().generateSourceAddressContainer();
-				MessageRouting routing = new MessageRouting(dac, sac);
-				
-				startGeoBroadcast(new EmergencyWarningMessage(routing, getOperatingSystem().getSimulationTime()), config.interval, config.radius);
-			} else if (evt.getResource() instanceof BroadcastResource) {
-				if (!isBroadcasting) {
-					getLog().info("Received GeoBroadcast event while isBroadcasting set to false - don't worry, VSimRTI does not allow to cancel events");
-					return;
-				}
-				
-				BroadcastResource br = (BroadcastResource) evt.getResource();
-				sendGeoBroadcast(br.msg, br.radius, br.interval);
-				
-				os.getEventManager().addEvent(new Event(os.getSimulationTime() + br.interval, this, br));
+				os.getEventManager().addEvent(new Event(os.getSimulationTime() + config.interval, this, eventFlag.GEOUPDATE_MSG));
+				break;
+			default:
+				break;
 			}
+		} else if (evt.getResource() instanceof BroadcastResource) {
+			if (!isBroadcasting) {
+				getLog().info("Received GeoBroadcast event while isBroadcasting set to false - don't worry, VSimRTI does not allow to cancel events");
+				return;
+			}
+
+			BroadcastResource br = (BroadcastResource) evt.getResource();
+			sendGeoBroadcast(br.msg, br.radius);
+
+			os.getEventManager().addEvent(new Event(os.getSimulationTime() + br.interval, this, br));
 		}
+	}
+	
+	protected MessageRouting getDefaultRouting() {
+		DestinationAddressContainer dac = DestinationAddressContainer.createTopologicalDestinationAddressAdHoc(new TopologicalDestinationAddress(TbusGeoserver.getAddress(), 1));
+		SourceAddressContainer sac = getOperatingSystem().generateSourceAddressContainer();
+		
+		return new MessageRouting(dac, sac);
 	}
 
 	/**
@@ -236,7 +229,7 @@ public class TbusGeoclient extends VehicleApplication {
 	 */
 	@Override
 	public void receiveV2XMessage(ReceivedV2XMessage msg) {
-		getLog().info(getOperatingSystem().getId() + " received message " + msg.getClass() + " at " + getOperatingSystem().getSimulationTime());
+		getLog().info("Received message " + msg.getClass() + " at " + getOperatingSystem().getSimulationTime());
 	}
 
 	/**
@@ -246,12 +239,8 @@ public class TbusGeoclient extends VehicleApplication {
 	public void setUp() {
 		initConfig();
 		
-		// Start updating geo position
-		getOperatingSystem().getEventManager().addEvent(new Event(getOperatingSystem().getSimulationTime() + startTimeout, this, GEOUPDATEMSG_FLAG));
-		
-		if (config.isEmergencyVehicle) {
-			getOperatingSystem().getEventManager().addEvent(new Event(getOperatingSystem().getSimulationTime() + startTimeout, this, BROADCAST_START_FLAG));
-		}
+		// Start updating geo position with first offset
+		getOperatingSystem().getEventManager().addEvent(new Event(getOperatingSystem().getSimulationTime() + config.offset, this, eventFlag.GEOUPDATE_MSG));
 	}
 
 	/**
