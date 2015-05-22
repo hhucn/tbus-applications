@@ -124,6 +124,7 @@ public class TbusGeoclient extends VehicleApplication {
 		Event broadcastEvent = new Event(os.getSimulationTime() + offset, this, br);
 		
 		os.getEventManager().addEvent(broadcastEvent);
+		getLog().info("Starting broadcast in " + offset + "ns");
 	}
 	
 	/**

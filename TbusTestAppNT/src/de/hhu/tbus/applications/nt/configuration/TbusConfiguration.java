@@ -9,6 +9,7 @@ import com.dcaiti.vsimrti.fed.applicationNT.ambassador.simulationUnit.operatingS
 import com.dcaiti.vsimrti.fed.applicationNT.ambassador.util.UnitLogger;
 
 import de.fraunhofer.fokus.eject.ObjectInstantiation;
+import de.hhu.tbus.applications.nt.emergencywarning.configuration.EmergencyWarningAppConfiguration;
 
 /**
  * @author bialon
@@ -31,20 +32,26 @@ public class TbusConfiguration<C> {
 	 */
 	public C readConfiguration(Class<C> aClass, String configFilename, OperatingSystem os, UnitLogger log) throws InstantiationException, IllegalAccessException {
 		final ObjectInstantiation<C> oi = new ObjectInstantiation<C>(aClass);
-		C config = null;
+		C config;
 		
 		File appVehConfig = new File(os.getConfigurationPath().getAbsolutePath() + File.separator + configFilename + "-" + os.getId() + ".json");
 		File appConfig = new File(os.getConfigurationPath().getAbsolutePath() + File.separator + configFilename + ".json");
 
 		if (appVehConfig.exists()) {
 			config = (C) oi.readFile(appVehConfig);
+			log.info("Using vehicle configuration");
 			log.info(oi.getLogMessage());
 		} else if (appConfig.exists()) {
 			config = (C) oi.readFile(appConfig);
+			log.info("Using class configuration");
 			log.info(oi.getLogMessage());
 		} else {
 			config = aClass.newInstance();
 			log.info("Using default configuration");
+		}
+		
+		if (config instanceof EmergencyWarningAppConfiguration) {
+			log.info("Is emergency vehicle: " + os.getId() + " - " + ((EmergencyWarningAppConfiguration) config).isEmergencyVehicle);
 		}
 		
 		return config;
