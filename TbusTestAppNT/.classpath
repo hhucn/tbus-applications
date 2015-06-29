@@ -88,5 +88,6 @@
 	<classpathentry kind="lib" path="/home/bialon/Downloads/vsimrti-0.14.0/vsimrti/bin/lib/vsimrti-messages-1.0.3-SNAPSHOT.jar"/>
 	<classpathentry kind="lib" path="sqlite-jdbc-3.7.2.jar"/>
 	<classpathentry kind="lib" path="/home/bialon/Downloads/vsimrti-0.14.0/vsimrti/bin/core/vsimrti-0.14.0-SNAPSHOT.jar"/>
+	<classpathentry kind="lib" path="/home/bialon/workspace/tbus-applications/TbusTestAppNT/jgrapht-core-0.9.1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

@@ -5,6 +5,7 @@ package de.hhu.tbus.applications.nt.emergencywarning;
 
 import com.dcaiti.vsimrti.fed.applicationNT.ambassador.simulationUnit.operatingSystem.OperatingSystem;
 import com.dcaiti.vsimrti.fed.applicationNT.ambassador.util.UnitLogger;
+import com.dcaiti.vsimrti.rti.eventScheduling.Event;
 import com.dcaiti.vsimrti.rti.objects.v2x.ReceivedV2XMessage;
 import com.dcaiti.vsimrti.rti.objects.v2x.V2XMessage;
 
@@ -12,7 +13,7 @@ import de.hhu.tbus.applications.nt.configuration.TbusConfiguration;
 import de.hhu.tbus.applications.nt.emergencywarning.configuration.EmergencyWarningAppConfiguration;
 import de.hhu.tbus.applications.nt.emergencywarning.message.EmergencyWarningMessage;
 import de.hhu.tbus.applications.nt.emergencywarning.message.EmergencyWarningMessage.EmergencyType;
-import de.hhu.tbus.applications.nt.geoserver.client.TbusGeoclient;
+import de.hhu.tbus.applications.nt.geoserver.edge.client.TbusGeoclient;
 
 /**
  * @author bialon
@@ -21,15 +22,26 @@ import de.hhu.tbus.applications.nt.geoserver.client.TbusGeoclient;
 public class EmergencyWarningApp extends TbusGeoclient {	
 	private EmergencyWarningAppConfiguration config;
 	
-	/**
-	 * Config file name 
-	 */
-	public static final String configFilename = "emergencyWarningApp";
-	
 	private void handleEmergencyWarningMessage(EmergencyWarningMessage msg) {
-		getLog().info("Slowing down to " + config.slowDownSpeed + " for " + config.obeyTime + "ms");
-		getOperatingSystem().slowDown(config.slowDownSpeed, config.obeyTime, null);
-	};
+		long delay = getOperatingSystem().getSimulationTime() - msg.getTimestamp(); 
+		if (delay > msg.getTimeout()) {
+			getLog().info("EmergencyWarningMessage timed out - Delay " + delay + "ns (" + (delay - msg.getTimeout()) + "ns too late)");
+		} else {
+			getLog().info("Slowing down to " + config.slowDownSpeed + " for " + config.obeyTime + "ms");
+			getOperatingSystem().slowDown(config.slowDownSpeed, config.obeyTime, null);
+		}
+	}
+	
+	@Override
+	public void processEvent(Event evt) throws Exception {
+		super.processEvent(evt);
+		
+		if (evt.getResource() == null) {
+			getLog().info("Received event at simulation time " + getOperatingSystem().getSimulationTime());
+			EmergencyWarningMessage msg = new EmergencyWarningMessage(getDefaultRouting(), EmergencyType.AMBULANCE, getOperatingSystem().getSimulationTime(), config.timeout);
+			startGeoBroadcast(msg, config.offset, config.interval, config.radius);
+		}
+	}
 	
 	@Override
 	protected void initConfig() {
@@ -39,7 +51,7 @@ public class EmergencyWarningApp extends TbusGeoclient {
 		UnitLogger log = getLog();
 		
 		try {
-			config = (new TbusConfiguration<EmergencyWarningAppConfiguration>()).readConfiguration(EmergencyWarningAppConfiguration.class, configFilename, os, log);
+			config = (new TbusConfiguration<EmergencyWarningAppConfiguration>()).readConfiguration(EmergencyWarningAppConfiguration.class, EmergencyWarningAppConfiguration.configFilename, os, log);
 		} catch (InstantiationException | IllegalAccessException ex) {
 			getLog().error("Cannot instantiate configuration object, using default configuration: ", ex);
 			
@@ -55,8 +67,8 @@ public class EmergencyWarningApp extends TbusGeoclient {
 		
 		if (config.isEmergencyVehicle) {
 			getLog().info("Now acting as emergency vehicle, geobroadcast starting in " + config.offset + "ns");
-			EmergencyWarningMessage msg = new EmergencyWarningMessage(getDefaultRouting(), EmergencyType.AMBULANCE, getOperatingSystem().getSimulationTime(), config.timeout);
-			startGeoBroadcast(msg, config.offset, config.interval, config.radius);
+			// Add start event
+			getOperatingSystem().getEventManager().addEvent(new Event(getOperatingSystem().getSimulationTime() + config.offset, this));
 		}
 	}
 	

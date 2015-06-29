@@ -15,6 +15,11 @@ public class EmergencyWarningAppConfiguration implements Serializable {
 	 * 
 	 */
 	private static final long serialVersionUID = 7210227704065980107L;
+	
+	/**
+	 * Config file name 
+	 */
+	public static final String configFilename = "emergencyWarningApp";
 
 	/**
 	 * Is the current unit an emergency vehicle?
@@ -37,7 +42,7 @@ public class EmergencyWarningAppConfiguration implements Serializable {
 	/**
 	 * Offset for first message distribution
 	 */
-	public long offset = 2_000_000_000L; 
+	public long offset = 10_000_000_000L; 
 	
 	/**
 	 * Broadcast geo radius
