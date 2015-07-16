@@ -111,7 +111,7 @@ public class TbusGeoclient extends VehicleApplication {
 		
 		GeoDistributeMessage gdm = new GeoDistributeMessage(msg, roadId, radius, os.getSimulationTime(), routing);
 		getLog().info("Created message " + gdm);
-//		os.sendV2XMessage(gdm);
+		os.sendV2XMessage(gdm);
 		getLog().info("Own id: " + os.getId());
 		getLog().info("Send GeoBroadcast message (id: " + gdm.getId() + ") to " + roadId + " with radius " + radius + " to " + TbusGeoserver.getAddress() + " at " + os.getSimulationTime());
 	}

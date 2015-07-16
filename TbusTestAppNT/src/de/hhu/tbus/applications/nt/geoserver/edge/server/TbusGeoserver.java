@@ -7,6 +7,7 @@ import java.io.File;
 import java.net.InetAddress;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import com.dcaiti.vsimrti.fed.applicationNT.ambassador.simulationUnit.applications.RoadSideUnitApplication;
@@ -128,6 +129,17 @@ public class TbusGeoserver extends RoadSideUnitApplication {
 		String edge = msg.getRoadId();
 		
 		ipToEdge.put(sender, edge);
+		
+		getLog().info("Vehicle with ip " + sender + " is now on edge " + edge);
+		
+		Set<Entry<InetAddress, String>> values = ipToEdge.entrySet();
+		String logout = "";
+		
+		for (Entry<InetAddress, String> entry: values) {
+			logout += entry.getKey() + " -> " + entry.getValue() + " ";
+		}
+		
+		getLog().info(logout);
 	}
 	
 	private void handleDistributeMessage(GeoDistributeMessage msg) {
@@ -139,12 +151,20 @@ public class TbusGeoserver extends RoadSideUnitApplication {
 		EmbeddedMessage embeddedMsg = msg.getMessage();
 		
 		List<List<String>> routes = graph.getRoutesLeadingTo(sourceEdge, maxDistance);
+//		List<List<String>> routes = graph.getRoutesStartingFrom(sourceEdge, maxDistance);
 		Set<String> routesEdges = new HashSet<String>();
 		
 		// Get a set of all edges within range
 		for (List<String> list: routes) {
 			routesEdges.addAll(list);
 		}
+		
+		String logout = "";
+		for (String edge: routesEdges) {
+			logout += edge + " ";
+		}
+		
+		getLog().info("Distributing message from edge " + sourceEdge + " to edges " + logout);
 		
 		// Forward the message to all vehicles on the mentioned above edges
 		for (String edge: routesEdges) {
@@ -160,6 +180,7 @@ public class TbusGeoserver extends RoadSideUnitApplication {
 				if (senderIp.equals(destinationIp)) {
 					continue;
 				}
+				getLog().info("Forwarding message to " + destinationIp + " on edge " + edge);
 				forwardEmbeddedMessage(embeddedMsg, destinationIp, timestamp);
 			}
 		}
