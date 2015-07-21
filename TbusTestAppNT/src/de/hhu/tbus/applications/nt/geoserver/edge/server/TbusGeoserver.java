@@ -5,12 +5,13 @@ package de.hhu.tbus.applications.nt.geoserver.edge.server;
 
 import java.io.File;
 import java.net.InetAddress;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.Set;
 
 import com.dcaiti.vsimrti.fed.applicationNT.ambassador.simulationUnit.applications.RoadSideUnitApplication;
+import com.dcaiti.vsimrti.fed.applicationNT.ambassador.simulationUnit.operatingSystem.OperatingSystem;
 import com.dcaiti.vsimrti.rti.eventScheduling.Event;
 import com.dcaiti.vsimrti.rti.messages.ApplicationSpecificMessage;
 import com.dcaiti.vsimrti.rti.objects.SumoTraciByteArrayMessageResponse;
@@ -29,6 +30,7 @@ import de.hhu.tbus.applications.nt.geoserver.edge.message.GeoUpdateMessage;
 import de.hhu.tbus.applications.nt.geoserver.edge.server.configuration.TbusGeoServerConfiguration;
 import de.hhu.tbus.applications.nt.geoserver.message.EmbeddedMessage;
 import de.hhu.tbus.applications.nt.graph.TbusRoadGraph;
+import de.hhu.tbus.applications.nt.message.TbusLogMessage;
 import de.hhu.tbus.util.DoubleAccessMap;
 
 /**
@@ -38,6 +40,7 @@ import de.hhu.tbus.util.DoubleAccessMap;
 public class TbusGeoserver extends RoadSideUnitApplication {
 	private static DestinationAddress address = null;
 	private DoubleAccessMap<InetAddress, String> ipToEdge = new DoubleAccessMap<InetAddress, String>();
+	private HashMap<InetAddress, Double> ipToLanePos = new HashMap<InetAddress, Double>();
 	private TbusRoadGraph graph;
 	
 	private TbusGeoServerConfiguration config;
@@ -56,47 +59,31 @@ public class TbusGeoserver extends RoadSideUnitApplication {
 	 * @see com.dcaiti.vsimrti.rti.eventScheduling.EventProcessor#processEvent(com.dcaiti.vsimrti.rti.eventScheduling.Event)
 	 */
 	@Override
-	public void processEvent(Event evt) throws Exception {
-		// TODO Auto-generated method stub
-
-	}
+	public void processEvent(Event evt) throws Exception {}
 
 	/**
 	 * @see com.dcaiti.vsimrti.fed.applicationNT.ambassador.simulationUnit.applications.Application#afterGetAndResetUserTaggedValue()
 	 */
 	@Override
-	public void afterGetAndResetUserTaggedValue() {
-		// TODO Auto-generated method stub
-
-	}
+	public void afterGetAndResetUserTaggedValue() {}
 
 	/**
 	 * @see com.dcaiti.vsimrti.fed.applicationNT.ambassador.simulationUnit.applications.Application#beforeGetAndResetUserTaggedValue()
 	 */
 	@Override
-	public void beforeGetAndResetUserTaggedValue() {
-		// TODO Auto-generated method stub
-
-	}
+	public void beforeGetAndResetUserTaggedValue() {}
 
 	/**
 	 * @see com.dcaiti.vsimrti.fed.applicationNT.ambassador.simulationUnit.applications.Application#onApplicationSpecificMessage(com.dcaiti.vsimrti.rti.messages.ApplicationSpecificMessage)
 	 */
 	@Override
-	public void onApplicationSpecificMessage(ApplicationSpecificMessage asm) {
-		// TODO Auto-generated method stub
-
-	}
+	public void onApplicationSpecificMessage(ApplicationSpecificMessage asm) {}
 
 	/**
 	 * @see com.dcaiti.vsimrti.fed.applicationNT.ambassador.simulationUnit.applications.Application#onSumoTraciByteArrayMessageResponse(com.dcaiti.vsimrti.rti.objects.SumoTraciByteArrayMessageResponse)
 	 */
 	@Override
-	public void onSumoTraciByteArrayMessageResponse(
-			SumoTraciByteArrayMessageResponse stbamr) {
-		// TODO Auto-generated method stub
-
-	}
+	public void onSumoTraciByteArrayMessageResponse(SumoTraciByteArrayMessageResponse stbamr) {}
 
 	/**
 	 * @see com.dcaiti.vsimrti.fed.applicationNT.ambassador.simulationUnit.applications.Application#receiveV2XMessage(com.dcaiti.vsimrti.rti.objects.v2x.ReceivedV2XMessage)
@@ -105,13 +92,10 @@ public class TbusGeoserver extends RoadSideUnitApplication {
 	public void receiveV2XMessage(ReceivedV2XMessage recvMsg) {
 		V2XMessage msg = recvMsg.getMessage();
 		
+		logMessageStatistics(msg);
+		
 		if (msg == null) {
-			getLog().error("Received null message!");
 			return;
-		} else if (msg.getRouting() == null) {
-			getLog().error("Received message with null routing!");
-		} else {
-			getLog().info("Received message with id " + msg.getId() + " from " + msg.getRouting().getSourceAddressContainer().getSourceAddress().getIPv4Address());
 		}
 		
 		if (msg instanceof GeoUpdateMessage) {
@@ -124,33 +108,45 @@ public class TbusGeoserver extends RoadSideUnitApplication {
 
 	}
 	
-	private void handleUpdateMessage(GeoUpdateMessage msg) {
-		InetAddress sender = msg.getRouting().getSourceAddressContainer().getSourceAddress().getIPv4Address();
-		String edge = msg.getRoadId();
+	protected void logMessageStatistics(V2XMessage msg) {
+		OperatingSystem os	= getOperatingSystem();
+		long now			= os.getSimulationTime();
 		
-		ipToEdge.put(sender, edge);
-		
-		getLog().info("Vehicle with ip " + sender + " is now on edge " + edge);
-		
-		Set<Entry<InetAddress, String>> values = ipToEdge.entrySet();
-		String logout = "";
-		
-		for (Entry<InetAddress, String> entry: values) {
-			logout += entry.getKey() + " -> " + entry.getValue() + " ";
+		if (msg != null) {
+			String source	= msg.getRouting().getSourceAddressContainer().getSourceAddress().getIPv4Address().toString();
+			String dest		= msg.getRouting().getDestinationAddressContainer().getDestinationAddress().getIPv4Address().toString();
+			
+			if (msg instanceof TbusLogMessage) {
+				long delay 		= now - ((TbusLogMessage) msg).getTimestamp();
+				
+				getLog().info(source + " -> " + dest + " at " + now + " delay " + delay + ": " + ((TbusLogMessage) msg).getLog());
+			} else {
+				getLog().info(source + " -> " + dest + " at " + now + ": " + msg.getClass().getSimpleName());
+			}
+		} else {
+			getLog().info("Received null message at " + now);
 		}
-		
-		getLog().info(logout);
 	}
 	
-	private void handleDistributeMessage(GeoDistributeMessage msg) {
+	private void handleUpdateMessage(GeoUpdateMessage msg) {		
+		InetAddress sender = msg.getRouting().getSourceAddressContainer().getSourceAddress().getIPv4Address();
+		String edge = msg.getRoadId();
+		double lanePos = msg.getLanePos();
+		
+		ipToEdge.put(sender, edge);
+		ipToLanePos.put(sender, lanePos);
+	}
+	
+	private void handleDistributeMessage(GeoDistributeMessage msg) {		
 		InetAddress senderIp = msg.getRouting().getSourceAddressContainer().getSourceAddress().getIPv4Address();
 		String sourceEdge = msg.getRoadId();
+		String nextEdge = msg.getNextRoadId();
 		double maxDistance = msg.getRadius();
-		long timestamp = msg.getTimestamp();
+		double msgLanePos = msg.getLanePos();
 		
 		EmbeddedMessage embeddedMsg = msg.getMessage();
 		
-		List<List<String>> routes = graph.getRoutesLeadingTo(sourceEdge, maxDistance);
+		List<List<String>> routes = graph.getRoutesLeadingTo(nextEdge, maxDistance);
 //		List<List<String>> routes = graph.getRoutesStartingFrom(sourceEdge, maxDistance);
 		Set<String> routesEdges = new HashSet<String>();
 		
@@ -159,43 +155,46 @@ public class TbusGeoserver extends RoadSideUnitApplication {
 			routesEdges.addAll(list);
 		}
 		
-		String logout = "";
-		for (String edge: routesEdges) {
-			logout += edge + " ";
-		}
-		
-		getLog().info("Distributing message from edge " + sourceEdge + " to edges " + logout);
-		
 		// Forward the message to all vehicles on the mentioned above edges
 		for (String edge: routesEdges) {
 			Set<InetAddress> destinations;
-			if (sourceEdge.equals(edge)) {
-				continue;
-			} else if ((destinations = ipToEdge.getKeys(edge)) == null) {
+			if ((destinations = ipToEdge.getKeys(edge)) == null) {
 				// No vehicles on edge
 				continue;
 			}
-			
+			if (nextEdge.equals(edge)) {
+				// Next edge, vehicles here drive normally
+				continue;
+			}
+
 			for (InetAddress destinationIp: destinations) {
 				if (senderIp.equals(destinationIp)) {
 					continue;
 				}
+				
+				// If this is the source edge, take lane position into account
+				if (sourceEdge.equals(edge) && ipToLanePos.get(destinationIp) >= msgLanePos) {
+					continue;
+				}
+				
 				getLog().info("Forwarding message to " + destinationIp + " on edge " + edge);
-				forwardEmbeddedMessage(embeddedMsg, destinationIp, timestamp);
+				forwardEmbeddedMessage(embeddedMsg, destinationIp);
 			}
 		}
 	}
 	
-	private void forwardEmbeddedMessage(EmbeddedMessage msg, InetAddress destinationIp, long timestamp) {
+	private void forwardEmbeddedMessage(EmbeddedMessage msg, InetAddress destinationIp) {
+		OperatingSystem os = getOperatingSystem();
+		
 		DestinationAddressContainer dac = DestinationAddressContainer.createTopologicalDestinationAddressAdHoc(new TopologicalDestinationAddress(new DestinationAddress(destinationIp), 1));
-		SourceAddressContainer sac = getOperatingSystem().generateSourceAddressContainer();
+		SourceAddressContainer sac = os.generateSourceAddressContainer();
 		
 		MessageRouting routing = new MessageRouting(dac, sac);
 		
-		V2XMessage forwardMsg = msg.copy(routing, timestamp);
-		getOperatingSystem().sendV2XMessage(forwardMsg);
+		EmbeddedMessage forwardMsg = msg.copy(routing, os.getSimulationTime());
+		os.sendV2XMessage(forwardMsg);
 		
-		getLog().info("Forwarded GeoDistributeMessage content " + forwardMsg.getClass() + " to " + destinationIp + " at " + getOperatingSystem().getSimulationTime());
+		getLog().info("Forwarded GeoDistributeMessage " + forwardMsg.getId() + " content " + forwardMsg.getClass() + " to " + destinationIp + " at " + getOperatingSystem().getSimulationTime());
 	}
 
 	/**
@@ -218,17 +217,13 @@ public class TbusGeoserver extends RoadSideUnitApplication {
 	 * @see com.dcaiti.vsimrti.fed.applicationNT.ambassador.simulationUnit.applications.Application#tearDown()
 	 */
 	@Override
-	public void tearDown() {
-	}
+	public void tearDown() {}
 
 	/**
 	 * @see com.dcaiti.vsimrti.fed.applicationNT.ambassador.simulationUnit.applications.Application#unableToSendV2XMessage(com.dcaiti.vsimrti.rti.objects.v2x.UnableToSendV2XMessage)
 	 */
 	@Override
-	public void unableToSendV2XMessage(UnableToSendV2XMessage msg) {
-		// TODO Auto-generated method stub
-
-	}
+	public void unableToSendV2XMessage(UnableToSendV2XMessage msg) {}
 	
 	public static final DestinationAddress getAddress() {
 		return address;

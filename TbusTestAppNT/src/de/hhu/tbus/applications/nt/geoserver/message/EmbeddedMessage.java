@@ -3,7 +3,9 @@ package de.hhu.tbus.applications.nt.geoserver.message;
 import com.dcaiti.vsimrti.rti.objects.v2x.MessageRouting;
 import com.dcaiti.vsimrti.rti.objects.v2x.V2XMessage;
 
-public abstract class EmbeddedMessage extends V2XMessage {
+import de.hhu.tbus.applications.nt.message.TbusLogMessage;
+
+public abstract class EmbeddedMessage extends V2XMessage implements TbusLogMessage {
 	/**
 	 * 
 	 */
@@ -12,6 +14,10 @@ public abstract class EmbeddedMessage extends V2XMessage {
 	 * Message original timestamp
 	 */
 	protected final long timestamp;
+	/**
+	 * Timestamp of message forwarding
+	 */
+	public long originalTimestamp;
 	/**
 	 * Message timeout, i.e. critical data is invalid after (timestamp + timeout)
 	 */
@@ -24,7 +30,7 @@ public abstract class EmbeddedMessage extends V2XMessage {
 		this.timeout = timeout;
 	}
 	
-	public abstract V2XMessage copy(MessageRouting routing, long timestamp);
+	public abstract EmbeddedMessage copy(MessageRouting routing, long copyTimestamp);
 	
 	public long getTimestamp() {
 		return timestamp;
@@ -36,5 +42,9 @@ public abstract class EmbeddedMessage extends V2XMessage {
 	
 	public int getLength() {
 		return (Long.SIZE * 2) / Byte.SIZE;
+	}
+	
+	public String getLog() {
+		return this.getClass().getSimpleName() + " id " + getId() + " length " + getLength() + " timestamp " + timestamp + " originalTimestamp " + originalTimestamp + " timeout " + timeout;
 	}
 }

@@ -29,7 +29,7 @@ public class EmergencyWarningAppConfiguration implements Serializable {
 	/**
 	 * Interval for message sending
 	 */
-	public long interval = 1_000_000_000L;
+	public long interval = 100_000_000L;
 	
 	/**
 	 * Message timeout
@@ -37,12 +37,12 @@ public class EmergencyWarningAppConfiguration implements Serializable {
 	 * 	now > send_timestamp + timeout
 	 * , the message is invalidated and discarded by this client.
 	 */
-	public long timeout = 1_500_000_000L;
+	public long timeout = 150_000_000L;
 	
 	/**
 	 * Offset for first message distribution
 	 */
-	public long offset = 10_000_000_000L; 
+	public long offset = 5_000_000_000L; 
 	
 	/**
 	 * Broadcast geo radius
@@ -57,5 +57,5 @@ public class EmergencyWarningAppConfiguration implements Serializable {
 	/**
 	 * Duration of emergency message obedience (in ms)
 	 */
-	public int obeyTime = 2_000;
+	public int obeyTime = 200;
 }

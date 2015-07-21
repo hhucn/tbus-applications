@@ -25,7 +25,7 @@ public class TbusGeoClientConfiguration implements Serializable {
 	/**
 	 *  Offset for first GeoUpdate (in ns)
 	 */
-	public long offset = 2_000_000_000L;
+	public long offset = 5_000_000_000L;
 	
 	/**
 	 * Default value for roadId
@@ -36,5 +36,10 @@ public class TbusGeoClientConfiguration implements Serializable {
 	 * Default value for lanePos
 	 */
 	public double defaultLanePos = 0.0d;
+	
+	/**
+	 * Default value for shouldTransmit (i.e. if this node should send position update data)
+	 */
+	public boolean shouldTransmit = true;
 	
 }

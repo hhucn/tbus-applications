@@ -22,11 +22,23 @@ import de.hhu.tbus.applications.nt.geoserver.edge.client.TbusGeoclient;
 public class EmergencyWarningApp extends TbusGeoclient {	
 	private EmergencyWarningAppConfiguration config;
 	
-	private void handleEmergencyWarningMessage(EmergencyWarningMessage msg) {
+	private void handleEmergencyWarningMessage(EmergencyWarningMessage msg) {		
+		if (config.isEmergencyVehicle) {
+			// If this is an emergency vehicle, ignore EV messages
+			return;
+		}
+		
 		long delay = getOperatingSystem().getSimulationTime() - msg.getTimestamp(); 
 		if (delay > msg.getTimeout()) {
 			getLog().info("EmergencyWarningMessage timed out - Delay " + delay + "ns (" + (delay - msg.getTimeout()) + "ns too late)");
 		} else {
+			getLog().info("Received lanePos: " + msg.getLanePos() + " own lanePos: " + getLanePosition());
+			getLog().info("Received roadId: " + msg.getRoadId() + " own roadId: " + getRoadIdEdge());
+			// Ignore message if we are ahead of EV because otherwise we would block it
+//			if (msg.getRoadId().equals(getRoadIdEdge()) && msg.getLanePos() < getLanePosition()) {
+//				getLog().info("Ignoring EmergencyWarningMessage because we are ahead of the EmergencyVehicle");
+//				return;
+//			}
 			getLog().info("Slowing down to " + config.slowDownSpeed + " for " + config.obeyTime + "ms");
 			getOperatingSystem().slowDown(config.slowDownSpeed, config.obeyTime, null);
 		}
@@ -37,8 +49,10 @@ public class EmergencyWarningApp extends TbusGeoclient {
 		super.processEvent(evt);
 		
 		if (evt.getResource() == null) {
-			getLog().info("Received event at simulation time " + getOperatingSystem().getSimulationTime());
-			EmergencyWarningMessage msg = new EmergencyWarningMessage(getDefaultRouting(), EmergencyType.AMBULANCE, getOperatingSystem().getSimulationTime(), config.timeout);
+			long now = getOperatingSystem().getSimulationTime();
+			
+			getLog().info("Received event at simulation time " + now);
+			EmergencyWarningMessage msg = new EmergencyWarningMessage(getDefaultRouting(), EmergencyType.AMBULANCE, getRoadIdEdge(), getLanePosition(), now, config.timeout);
 			startGeoBroadcast(msg, config.offset, config.interval, config.radius);
 		}
 	}
@@ -74,11 +88,10 @@ public class EmergencyWarningApp extends TbusGeoclient {
 	
 	@Override
 	public void receiveV2XMessage(ReceivedV2XMessage recMsg) {
+		super.receiveV2XMessage(recMsg);
 		V2XMessage embMsg = recMsg.getMessage();
 		
-		if (embMsg instanceof EmergencyWarningMessage) {
-			getLog().info("Received emergency warning message at " + getOperatingSystem().getSimulationTime());
-			
+		if (embMsg instanceof EmergencyWarningMessage) {			
 			handleEmergencyWarningMessage((EmergencyWarningMessage) embMsg);
 		}
 	}

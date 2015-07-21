@@ -1,5 +1,7 @@
 package de.hhu.tbus.applications.nt.geoserver.edge.client;
 
+import java.util.List;
+
 import com.dcaiti.vsimrti.fed.applicationNT.ambassador.simulationUnit.applications.VehicleApplication;
 import com.dcaiti.vsimrti.fed.applicationNT.ambassador.simulationUnit.operatingSystem.OperatingSystem;
 import com.dcaiti.vsimrti.fed.applicationNT.ambassador.simulationUnit.operatingSystem.VehicleOperatingSystem;
@@ -12,6 +14,7 @@ import com.dcaiti.vsimrti.rti.objects.address.TopologicalDestinationAddress;
 import com.dcaiti.vsimrti.rti.objects.v2x.MessageRouting;
 import com.dcaiti.vsimrti.rti.objects.v2x.ReceivedV2XMessage;
 import com.dcaiti.vsimrti.rti.objects.v2x.UnableToSendV2XMessage;
+import com.dcaiti.vsimrti.rti.objects.v2x.V2XMessage;
 import com.dcaiti.vsimrti.rti.objects.vehicle.VehicleInfo;
 
 import de.hhu.tbus.applications.nt.configuration.TbusConfiguration;
@@ -20,6 +23,7 @@ import de.hhu.tbus.applications.nt.geoserver.edge.message.GeoDistributeMessage;
 import de.hhu.tbus.applications.nt.geoserver.edge.message.GeoUpdateMessage;
 import de.hhu.tbus.applications.nt.geoserver.edge.server.TbusGeoserver;
 import de.hhu.tbus.applications.nt.geoserver.message.EmbeddedMessage;
+import de.hhu.tbus.applications.nt.message.TbusLogMessage;
 
 /**
  * @author bialon
@@ -55,7 +59,7 @@ public class TbusGeoclient extends VehicleApplication {
 		}
 	}
 	
-	private String getRoadIdEdge() {
+	protected String getRoadIdEdge() {
 		String roadId = null;
 		VehicleInfo vi;
 		
@@ -64,10 +68,53 @@ public class TbusGeoclient extends VehicleApplication {
 		}
 		
 		if (roadId == null) {
-			return config.defaultRoadId;
+			roadId = config.defaultRoadId;
 		} else {
-			return roadId.substring(0, roadId.lastIndexOf("_"));
+			roadId = roadId.substring(0, roadId.lastIndexOf("_"));
 		}
+		
+		return roadId;
+	}
+	
+	protected String getNextRoadIdEdge() {
+		VehicleOperatingSystem os = getOperatingSystem();
+		String nextRoadId = config.defaultRoadId;
+		VehicleInfo vi;
+		
+		if ((vi = os.getVehicleInfo()) != null) {
+			String roadId = getRoadIdEdge();
+			List<String> edges = vi.getRoute().getEdges();
+			
+			int nextPosition = edges.indexOf(roadId) + 1;
+			
+			if (nextPosition == edges.size()) {
+				// Last element in list, use current roadId
+				nextRoadId = roadId;
+			} else {
+				nextRoadId = edges.get(nextPosition);
+			}
+		}
+		
+		return nextRoadId;
+	}
+	
+	protected double getLanePosition() {
+		VehicleInfo vi;
+		double lanePos = config.defaultLanePos;
+		
+		if ((vi = getOperatingSystem().getVehicleInfo()) != null ) {
+			lanePos = vi.getLanePosition();
+		}
+		
+		return lanePos;
+	}
+	
+	/**
+	 * Safety check for message transmission
+	 * @return
+	 */
+	public boolean readyToTransmit() {
+		return (getOperatingSystem().getVehicleInfo() != null);
 	}
 	
 	/**
@@ -77,21 +124,26 @@ public class TbusGeoclient extends VehicleApplication {
 		VehicleOperatingSystem os = getOperatingSystem();
 		long now = os.getSimulationTime();
 		
-		// Only send a message if we have a position
-		VehicleInfo vi;
-		if ((vi = os.getVehicleInfo()) != null ) {
-			String roadId = getRoadIdEdge();
-			double lanePos = vi.getLanePosition();
-			
-			DestinationAddressContainer dac = DestinationAddressContainer.createTopologicalDestinationAddressAdHoc(new TopologicalDestinationAddress(TbusGeoserver.getAddress(), 1));
-			SourceAddressContainer sac = os.generateSourceAddressContainer();
-			MessageRouting routing = new MessageRouting(dac, sac);
-			
-			GeoUpdateMessage message = new GeoUpdateMessage(roadId, lanePos, now, routing);
-			
-			os.sendV2XMessage(message);
-			getLog().info("Send update message (id: " + message.getId() + ") with position (" + roadId + " at " + lanePos + ") to " + TbusGeoserver.getAddress() + " at " + now);
-		}		
+		String roadId = getRoadIdEdge();
+		double lanePos = getLanePosition();
+				
+		DestinationAddressContainer dac = DestinationAddressContainer.createTopologicalDestinationAddressAdHoc(new TopologicalDestinationAddress(TbusGeoserver.getAddress(), 1));
+		SourceAddressContainer sac = os.generateSourceAddressContainer();
+		MessageRouting routing = new MessageRouting(dac, sac);
+				
+		GeoUpdateMessage message = new GeoUpdateMessage(roadId, lanePos, now, routing);
+
+		// Transmission safety checks
+		if (config.shouldTransmit) {
+			if (readyToTransmit()) {
+				getLog().info("Send update message (id: " + message.getId() + ") with position (" + roadId + " at " + lanePos + ") to " + TbusGeoserver.getAddress() + " at " + now);
+				os.sendV2XMessage(message);
+			} else {
+				getLog().info("Would send update message (id: " + message.getId() + ") with position (" + roadId + " at " + lanePos + ") to " + TbusGeoserver.getAddress() + " at " + now + ", but vehicle is not ready");
+			}
+		} else {
+			getLog().info("Would send update message (id: " + message.getId() + ") with position (" + roadId + " at " + lanePos + ") to " + TbusGeoserver.getAddress() + " at " + now + ", but disabled per config");
+		}
 	}
 
 	/**
@@ -104,16 +156,22 @@ public class TbusGeoclient extends VehicleApplication {
 		VehicleOperatingSystem os = getOperatingSystem();
 		
 		String roadId = getRoadIdEdge();
+		String nextRoadId = getNextRoadIdEdge();
+		double lanePos = getLanePosition();
 		
 		DestinationAddressContainer dac = DestinationAddressContainer.createTopologicalDestinationAddressAdHoc(new TopologicalDestinationAddress(TbusGeoserver.getAddress(), 1));
 		SourceAddressContainer sac = os.generateSourceAddressContainer();
 		MessageRouting routing = new MessageRouting(dac, sac);
 		
-		GeoDistributeMessage gdm = new GeoDistributeMessage(msg, roadId, radius, os.getSimulationTime(), routing);
+		GeoDistributeMessage gdm = new GeoDistributeMessage(msg, roadId, nextRoadId, lanePos, radius, os.getSimulationTime(), routing);
 		getLog().info("Created message " + gdm);
-		os.sendV2XMessage(gdm);
-		getLog().info("Own id: " + os.getId());
-		getLog().info("Send GeoBroadcast message (id: " + gdm.getId() + ") to " + roadId + " with radius " + radius + " to " + TbusGeoserver.getAddress() + " at " + os.getSimulationTime());
+		
+		if (readyToTransmit()) {
+			os.sendV2XMessage(gdm);
+			getLog().info("Send GeoBroadcast message (id: " + gdm.getId() + ") to " + roadId + " with radius " + radius + " to " + TbusGeoserver.getAddress() + " at " + os.getSimulationTime());
+		} else {
+			getLog().info("Would send GeoBroadcast message (id: " + gdm.getId() + ") to " + roadId + " with radius " + radius + " to " + TbusGeoserver.getAddress() + " at " + os.getSimulationTime() + " but vehicle is not ready");
+		}
 	}
 	
 	/**
@@ -186,6 +244,26 @@ public class TbusGeoclient extends VehicleApplication {
 		
 		return new MessageRouting(dac, sac);
 	}
+	
+	protected void logMessageStatistics(V2XMessage msg) {
+		OperatingSystem os	= getOperatingSystem();
+		long now			= os.getSimulationTime();
+		
+		if (msg != null) {
+			String source	= msg.getRouting().getSourceAddressContainer().getSourceAddress().getIPv4Address().toString();
+			String dest		= msg.getRouting().getDestinationAddressContainer().getDestinationAddress().getIPv4Address().toString();
+			
+			if (msg instanceof TbusLogMessage) {
+				long delay 		= now - ((TbusLogMessage) msg).getTimestamp();
+				
+				getLog().info(source + " -> " + dest + " at " + now + " delay " + delay + ": " + ((TbusLogMessage) msg).getLog());
+			} else {
+				getLog().info(source + " -> " + dest + " at " + now + ": " + msg.getClass().getSimpleName());
+			}
+		} else {
+			getLog().info("Received null message at " + now);
+		}
+	}
 
 	/**
 	 * @see com.dcaiti.vsimrti.fed.applicationNT.ambassador.simulationUnit.applications.VehicleApplication#afterUpdateConnection()
@@ -240,7 +318,7 @@ public class TbusGeoclient extends VehicleApplication {
 	 */
 	@Override
 	public void receiveV2XMessage(ReceivedV2XMessage msg) {
-		getLog().info("Received message " + msg.getClass() + " at " + getOperatingSystem().getSimulationTime());
+		logMessageStatistics(msg.getMessage());
 	}
 
 	/**

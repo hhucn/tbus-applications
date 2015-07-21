@@ -4,13 +4,15 @@ import com.dcaiti.vsimrti.rti.objects.v2x.V2XMessage;
 import com.dcaiti.vsimrti.rti.objects.v2x.EncodedV2XMessage;
 import com.dcaiti.vsimrti.rti.objects.v2x.MessageRouting;
 
+import de.hhu.tbus.applications.nt.message.TbusLogMessage;
+
 /**
  * A Geoserver update message.
  * This message should be sent on a regular interval by Tbus mobile nodes
  * @author bialon
  *
  */
-public class GeoUpdateMessage extends V2XMessage {
+public class GeoUpdateMessage extends V2XMessage implements TbusLogMessage {
 	/**
 	 * 
 	 */
@@ -42,7 +44,13 @@ public class GeoUpdateMessage extends V2XMessage {
 		this.timestamp = timestamp;
 		
 		// Only encode by size
-		encodedMessage = new EncodedV2XMessage(((Double.SIZE + Long.SIZE) / Byte.SIZE) + roadId.length());
+		encodedMessage = new EncodedV2XMessage(getSize());
+	}
+	
+	private int getSize() {
+		int size = ((Double.SIZE + Long.SIZE) / Byte.SIZE) + roadId.length();
+		
+		return (size < 200) ? 200 : size;
 	}
 	
 	/**
@@ -72,5 +80,9 @@ public class GeoUpdateMessage extends V2XMessage {
 	 */
 	public long getTimestamp() {
 		return timestamp;
+	}
+	
+	public String getLog() {
+		return this.getClass().getSimpleName() + " id " + getId() + " length " + getSize() + " timestamp " + timestamp + " roadId " + roadId + " lanePos " + lanePos;
 	}
 }
