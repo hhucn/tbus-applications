@@ -18,6 +18,12 @@ public class EmergencyWarningMessage extends EmbeddedMessage implements TbusLogM
 	 * 
 	 */
 	private static final long serialVersionUID = 3051425906236801637L;
+	
+	/**
+	 * Minimum message length in Byte
+	 */
+	private static final int minLength = 40;
+	
 	private final EncodedV2XMessage encodedMessage;
 	
 	public enum EmergencyType {
@@ -29,6 +35,7 @@ public class EmergencyWarningMessage extends EmbeddedMessage implements TbusLogM
 	};
 	
 	private final EmergencyType emergencyType;
+	//TODO: Remove roadId and lanePos
 	private final String roadId;
 	private final double lanePos;
 
@@ -91,7 +98,7 @@ public class EmergencyWarningMessage extends EmbeddedMessage implements TbusLogM
 	public int getLength() {
 		// Super length and 1 byte for the enum
 		int length = super.getLength() + 1 + (Double.SIZE / Byte.SIZE) + roadId.length();
-		return (length < 200) ? 200 : length;
+		return (length < minLength) ? minLength : length;
 	}
 	
 	/**

@@ -41,7 +41,7 @@ public abstract class EmbeddedMessage extends V2XMessage implements TbusLogMessa
 	}
 	
 	public int getLength() {
-		return (Long.SIZE * 2) / Byte.SIZE;
+		return (Long.SIZE * 3) / Byte.SIZE;
 	}
 	
 	public String getLog() {

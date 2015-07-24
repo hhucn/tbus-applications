@@ -17,6 +17,12 @@ public class GeoUpdateMessage extends V2XMessage implements TbusLogMessage {
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
+	
+	/**
+	 * Minimum message length in byte
+	 */
+	private static final int minLength = 200;
+	
 	/**
 	 * Encoded V2X message for further handling
 	 */
@@ -50,7 +56,7 @@ public class GeoUpdateMessage extends V2XMessage implements TbusLogMessage {
 	private int getSize() {
 		int size = ((Double.SIZE + Long.SIZE) / Byte.SIZE) + roadId.length();
 		
-		return (size < 200) ? 200 : size;
+		return (size < minLength) ? minLength : size;
 	}
 	
 	/**

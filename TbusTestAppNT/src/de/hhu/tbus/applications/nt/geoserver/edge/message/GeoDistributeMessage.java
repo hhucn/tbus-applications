@@ -19,6 +19,7 @@ public class GeoDistributeMessage extends V2XMessage implements TbusLogMessage {
 	 * 
 	 */
 	private static final long serialVersionUID = -3504281866940316666L;
+	
 	private final EmbeddedMessage message;
 	private final String roadId;
 	private final String nextRoadId;
@@ -51,9 +52,7 @@ public class GeoDistributeMessage extends V2XMessage implements TbusLogMessage {
 	}
 	
 	private int getSize() {
-		int size = message.getLength() + roadId.length() + nextRoadId.length() + ((Double.SIZE + Double.SIZE + Long.SIZE) / Byte.SIZE);
-		
-		return (size < 200) ? 200 : size;
+		return message.getLength() + roadId.length() + nextRoadId.length() + ((Double.SIZE + Double.SIZE + Long.SIZE) / Byte.SIZE);
 	}
 	
 	/**
