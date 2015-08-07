@@ -28,7 +28,7 @@ public class EmergencyWarningApp extends TbusGeoclient {
 			return;
 		}
 		
-		long delay = getOperatingSystem().getSimulationTime() - msg.getTimestamp(); 
+		long delay = getOperatingSystem().getSimulationTime() - msg.originalTimestamp; 
 		if (delay > msg.getTimeout()) {
 			getLog().info("EmergencyWarningMessage timed out - Delay " + delay + "ns (" + (delay - msg.getTimeout()) + "ns too late)");
 		} else {

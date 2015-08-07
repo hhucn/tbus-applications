@@ -18,6 +18,7 @@ import com.dcaiti.vsimrti.rti.objects.v2x.V2XMessage;
 import com.dcaiti.vsimrti.rti.objects.vehicle.VehicleInfo;
 
 import de.hhu.tbus.applications.nt.configuration.TbusConfiguration;
+import de.hhu.tbus.applications.nt.emergencywarning.message.EmergencyWarningMessage;
 import de.hhu.tbus.applications.nt.geoserver.edge.client.configuration.TbusGeoClientConfiguration;
 import de.hhu.tbus.applications.nt.geoserver.edge.message.GeoDistributeMessage;
 import de.hhu.tbus.applications.nt.geoserver.edge.message.GeoUpdateMessage;
@@ -158,12 +159,15 @@ public class TbusGeoclient extends VehicleApplication {
 		String roadId = getRoadIdEdge();
 		String nextRoadId = getNextRoadIdEdge();
 		double lanePos = getLanePosition();
+		long now = os.getSimulationTime();
 		
 		DestinationAddressContainer dac = DestinationAddressContainer.createTopologicalDestinationAddressAdHoc(new TopologicalDestinationAddress(TbusGeoserver.getAddress(), 1));
 		SourceAddressContainer sac = os.generateSourceAddressContainer();
 		MessageRouting routing = new MessageRouting(dac, sac);
 		
-		GeoDistributeMessage gdm = new GeoDistributeMessage(msg, roadId, nextRoadId, lanePos, radius, os.getSimulationTime(), routing);
+		EmbeddedMessage msgCopy = msg.copy(getDefaultRouting(), now);
+		
+		GeoDistributeMessage gdm = new GeoDistributeMessage(msgCopy, roadId, nextRoadId, lanePos, radius, now, routing);
 		getLog().info("Created message " + gdm);
 		
 		if (readyToTransmit()) {
@@ -254,7 +258,13 @@ public class TbusGeoclient extends VehicleApplication {
 			String dest		= msg.getRouting().getDestinationAddressContainer().getDestinationAddress().getIPv4Address().toString();
 			
 			if (msg instanceof TbusLogMessage) {
-				long delay 		= now - ((TbusLogMessage) msg).getTimestamp();
+				long delay;
+				if (msg instanceof EmergencyWarningMessage) {
+					// Use the original send timestamp and not the forwarded one
+					delay = now - ((EmergencyWarningMessage) msg).originalTimestamp;
+				} else {
+					delay = now - ((TbusLogMessage) msg).getTimestamp();
+				}
 				
 				getLog().info(source + " -> " + dest + " at " + now + " delay " + delay + ": " + ((TbusLogMessage) msg).getLog());
 			} else {

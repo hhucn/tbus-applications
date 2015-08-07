@@ -60,9 +60,8 @@ public class EmergencyWarningMessage extends EmbeddedMessage implements TbusLogM
 	 */
 	@Override
 	public EmbeddedMessage copy(MessageRouting routing, long timestamp) {
-		long originalTimestamp = this.timestamp;
 		EmbeddedMessage copyMessage = new EmergencyWarningMessage(routing, this.emergencyType, this.roadId, this.lanePos, timestamp, this.timeout);
-		copyMessage.originalTimestamp = originalTimestamp;
+		copyMessage.originalTimestamp = this.timestamp;
 		
 		return copyMessage;
 	}
