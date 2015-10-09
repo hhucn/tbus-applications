@@ -41,6 +41,7 @@ public class TbusGeoserver extends RoadSideUnitApplication {
 	private static DestinationAddress address = null;
 	private DoubleAccessMap<InetAddress, String> ipToEdge = new DoubleAccessMap<InetAddress, String>();
 	private HashMap<InetAddress, Double> ipToLanePos = new HashMap<InetAddress, Double>();
+	private Set<InetAddress> activeEmergencyVehicles = new HashSet<InetAddress>();
 	private TbusRoadGraph graph;
 	
 	private TbusGeoServerConfiguration config;
@@ -135,6 +136,10 @@ public class TbusGeoserver extends RoadSideUnitApplication {
 		
 		ipToEdge.put(sender, edge);
 		ipToLanePos.put(sender, lanePos);
+		
+		if (activeEmergencyVehicles.contains(sender)) {
+			// Distribute updated EV message
+		}
 	}
 	
 	private void handleDistributeMessage(GeoDistributeMessage msg) {		
@@ -146,6 +151,14 @@ public class TbusGeoserver extends RoadSideUnitApplication {
 		
 		EmbeddedMessage embeddedMsg = msg.getMessage();
 		
+		activeEmergencyVehicles.add(senderIp);
+		
+		//TODO: Inform sender (ACK) of message?
+		
+		distributeMessage(embeddedMsg, senderIp, sourceEdge, nextEdge, msgLanePos, maxDistance);
+	}
+	
+	private void distributeMessage(EmbeddedMessage msg, InetAddress senderIp, String sourceEdge, String nextEdge, double lanePos, double maxDistance) {
 		List<List<String>> routes = graph.getRoutesLeadingTo(nextEdge, maxDistance);
 //		List<List<String>> routes = graph.getRoutesStartingFrom(sourceEdge, maxDistance);
 		Set<String> routesEdges = new HashSet<String>();
@@ -173,12 +186,12 @@ public class TbusGeoserver extends RoadSideUnitApplication {
 				}
 				
 				// If this is the source edge, take lane position into account
-				if (sourceEdge.equals(edge) && ipToLanePos.get(destinationIp) >= msgLanePos) {
+				if (sourceEdge.equals(edge) && ipToLanePos.get(destinationIp) >= lanePos) {
 					continue;
 				}
 				
 				getLog().info("Forwarding message to " + destinationIp + " on edge " + edge);
-				forwardEmbeddedMessage(embeddedMsg, destinationIp);
+				forwardEmbeddedMessage(msg, destinationIp);
 			}
 		}
 	}
