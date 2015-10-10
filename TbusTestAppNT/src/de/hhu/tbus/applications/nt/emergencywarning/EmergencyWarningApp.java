@@ -3,6 +3,8 @@
  */
 package de.hhu.tbus.applications.nt.emergencywarning;
 
+import java.util.UUID;
+
 import com.dcaiti.vsimrti.fed.applicationNT.ambassador.simulationUnit.operatingSystem.OperatingSystem;
 import com.dcaiti.vsimrti.fed.applicationNT.ambassador.util.UnitLogger;
 import com.dcaiti.vsimrti.rti.eventScheduling.Event;
@@ -32,13 +34,6 @@ public class EmergencyWarningApp extends TbusGeoclient {
 		if (delay > msg.getTimeout()) {
 			getLog().info("EmergencyWarningMessage timed out - Delay " + delay + "ns (" + (delay - msg.getTimeout()) + "ns too late)");
 		} else {
-			getLog().info("Received lanePos: " + msg.getLanePos() + " own lanePos: " + getLanePosition());
-			getLog().info("Received roadId: " + msg.getRoadId() + " own roadId: " + getRoadIdEdge());
-			// Ignore message if we are ahead of EV because otherwise we would block it
-//			if (msg.getRoadId().equals(getRoadIdEdge()) && msg.getLanePos() < getLanePosition()) {
-//				getLog().info("Ignoring EmergencyWarningMessage because we are ahead of the EmergencyVehicle");
-//				return;
-//			}
 			getLog().info("Slowing down to " + config.slowDownSpeed + " for " + config.obeyTime + "ms");
 			getOperatingSystem().slowDown(config.slowDownSpeed, config.obeyTime, null);
 		}
@@ -52,7 +47,7 @@ public class EmergencyWarningApp extends TbusGeoclient {
 			long now = getOperatingSystem().getSimulationTime();
 			
 			getLog().info("Received event at simulation time " + now);
-			EmergencyWarningMessage msg = new EmergencyWarningMessage(getDefaultRouting(), EmergencyType.AMBULANCE, getRoadIdEdge(), getLanePosition(), now, config.timeout);
+			EmergencyWarningMessage msg = new EmergencyWarningMessage(getDefaultRouting(), EmergencyType.AMBULANCE, now, config.timeout, UUID.randomUUID());
 			startGeoBroadcast(msg, config.offset, config.interval, config.radius);
 		}
 	}

@@ -6,8 +6,10 @@ package de.hhu.tbus.applications.nt.graph;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -134,6 +136,18 @@ public class TbusRoadGraph {
 	 */
 	private SumoEdge getEdge(String id) {
 		return idToEdge.get(id);
+	}
+	
+	public synchronized Set<String> getNextEdges(String currentEdge) {
+		String currentEdgeEnd = graph.getEdgeTarget(getEdge(currentEdge));
+		Set<SumoEdge> edges = graph.outgoingEdgesOf(currentEdgeEnd);
+		
+		Set<String> edgeIds = new HashSet<String>();
+		for (SumoEdge edge: edges) {
+			edgeIds.add(edge.getId());
+		}
+		
+		return edgeIds;
 	}
 
 	/**

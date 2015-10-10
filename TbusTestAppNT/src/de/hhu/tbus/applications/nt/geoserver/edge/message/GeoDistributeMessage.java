@@ -20,12 +20,17 @@ public class GeoDistributeMessage extends V2XMessage implements TbusLogMessage {
 	 */
 	private static final long serialVersionUID = -3504281866940316666L;
 	
+	public enum MessageType {
+		START,
+		STOP
+	}
+	
 	private final EmbeddedMessage message;
 	private final String roadId;
-	private final String nextRoadId;
 	private final double lanePos;
 	private final double radius;
 	private final long timestamp;
+	private final MessageType type;
 	private final EncodedV2XMessage encodedMessage;
 	
 	/**
@@ -34,25 +39,25 @@ public class GeoDistributeMessage extends V2XMessage implements TbusLogMessage {
 	public GeoDistributeMessage(
 			EmbeddedMessage message,
 			String roadId,
-			String nextRoadId,
 			double lanePos,
 			double radius,
 			long timestamp,
+			MessageType type,
 			MessageRouting routing) {
 		super(routing);
 		
 		this.message = message;
 		this.roadId = roadId;
-		this.nextRoadId = nextRoadId;
 		this.lanePos = lanePos;
 		this.radius = radius;
 		this.timestamp = timestamp;
+		this.type = type;
 		
 		encodedMessage = new EncodedV2XMessage(getSize());
 	}
 	
 	private int getSize() {
-		return message.getLength() + roadId.length() + nextRoadId.length() + ((Double.SIZE + Double.SIZE + Long.SIZE) / Byte.SIZE);
+		return message.getLength() + roadId.length() + ((Double.SIZE + Double.SIZE + Long.SIZE) / Byte.SIZE);
 	}
 	
 	/**
@@ -66,12 +71,6 @@ public class GeoDistributeMessage extends V2XMessage implements TbusLogMessage {
 	 */
 	public String getRoadId() {
 		return roadId;
-	}
-	/**
-	 * @return the next road Id
-	 */
-	public String getNextRoadId() {
-		return nextRoadId;
 	}
 	/**
 	 * @return the lanepos
@@ -90,6 +89,12 @@ public class GeoDistributeMessage extends V2XMessage implements TbusLogMessage {
 	 */
 	public long getTimestamp() {
 		return timestamp;
+	}
+	/**
+	 * @return Message type
+	 */
+	public MessageType getType() {
+		return type;
 	}
 	/**
 	 * @see com.dcaiti.vsimrti.rti.objects.v2x.V2XMessage#getEncodedV2XMessage()

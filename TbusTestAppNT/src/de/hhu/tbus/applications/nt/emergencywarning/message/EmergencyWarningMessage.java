@@ -3,6 +3,8 @@
  */
 package de.hhu.tbus.applications.nt.emergencywarning.message;
 
+import java.util.UUID;
+
 import com.dcaiti.vsimrti.rti.objects.v2x.EncodedV2XMessage;
 import com.dcaiti.vsimrti.rti.objects.v2x.MessageRouting;
 
@@ -35,9 +37,6 @@ public class EmergencyWarningMessage extends EmbeddedMessage implements TbusLogM
 	};
 	
 	private final EmergencyType emergencyType;
-	//TODO: Remove roadId and lanePos
-	private final String roadId;
-	private final double lanePos;
 
 	/**
 	 * Constructor inherited by EmbeddedMessage
@@ -45,13 +44,10 @@ public class EmergencyWarningMessage extends EmbeddedMessage implements TbusLogM
 	 * @param timestamp Message original timestamp
 	 * @param timeout Message timeout
 	 */
-	public EmergencyWarningMessage(MessageRouting routing, EmergencyType emergencyType, String roadId, double lanePos, long timestamp, long timeout) {
-		super(routing, timestamp, timeout);
+	public EmergencyWarningMessage(MessageRouting routing, EmergencyType emergencyType, long timestamp, long timeout, UUID uuid) {
+		super(routing, timestamp, timeout, uuid);
 		
 		this.emergencyType = emergencyType;
-		this.roadId = roadId;
-		this.lanePos = lanePos;
-		
 		this.encodedMessage = new EncodedV2XMessage(getLength());
 	}
 	
@@ -60,7 +56,7 @@ public class EmergencyWarningMessage extends EmbeddedMessage implements TbusLogM
 	 */
 	@Override
 	public EmbeddedMessage copy(MessageRouting routing, long timestamp) {
-		EmbeddedMessage copyMessage = new EmergencyWarningMessage(routing, this.emergencyType, this.roadId, this.lanePos, timestamp, this.timeout);
+		EmbeddedMessage copyMessage = new EmergencyWarningMessage(routing, this.emergencyType, timestamp, this.timeout, this.uuid);
 		copyMessage.originalTimestamp = this.timestamp;
 		
 		return copyMessage;
@@ -73,22 +69,6 @@ public class EmergencyWarningMessage extends EmbeddedMessage implements TbusLogM
 	public EmergencyType getEmergencyType() {
 		return emergencyType;
 	}
-	
-	/**
-	 * The messages' road id
-	 * @return road id
-	 */
-	public String getRoadId() {
-		return roadId;
-	}
-	
-	/**
-	 * The messages' lane position
-	 * @return Lane position
-	 */
-	public double getLanePos() {
-		return lanePos;
-	}
 
 	/**
 	 * @see de.hhu.tbus.applications.nt.geoserver.message.EmbeddedMessage#getLength()
@@ -96,7 +76,7 @@ public class EmergencyWarningMessage extends EmbeddedMessage implements TbusLogM
 	@Override
 	public int getLength() {
 		// Super length and 1 byte for the enum
-		int length = super.getLength() + 1 + (Double.SIZE / Byte.SIZE) + roadId.length();
+		int length = super.getLength() + 1;
 		return (length < minLength) ? minLength : length;
 	}
 	
@@ -109,6 +89,6 @@ public class EmergencyWarningMessage extends EmbeddedMessage implements TbusLogM
 	}
 	
 	public String getLog() {
-		return this.getClass().getSimpleName() + " id " + getId() + " from (" + super.getLog() + ") emergencyType " + emergencyType.toString() + " roadId " + roadId + " lanePos " + lanePos;
+		return this.getClass().getSimpleName() + " id " + getId() + " from (" + super.getLog() + ") emergencyType " + emergencyType.toString();
 	}
 }

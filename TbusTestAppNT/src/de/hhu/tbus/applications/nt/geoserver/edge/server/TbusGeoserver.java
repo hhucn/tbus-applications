@@ -5,6 +5,7 @@ package de.hhu.tbus.applications.nt.geoserver.edge.server;
 
 import java.io.File;
 import java.net.InetAddress;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -145,7 +146,6 @@ public class TbusGeoserver extends RoadSideUnitApplication {
 	private void handleDistributeMessage(GeoDistributeMessage msg) {		
 		InetAddress senderIp = msg.getRouting().getSourceAddressContainer().getSourceAddress().getIPv4Address();
 		String sourceEdge = msg.getRoadId();
-		String nextEdge = msg.getNextRoadId();
 		double maxDistance = msg.getRadius();
 		double msgLanePos = msg.getLanePos();
 		
@@ -155,13 +155,19 @@ public class TbusGeoserver extends RoadSideUnitApplication {
 		
 		//TODO: Inform sender (ACK) of message?
 		
-		distributeMessage(embeddedMsg, senderIp, sourceEdge, nextEdge, msgLanePos, maxDistance);
+		distributeMessage(embeddedMsg, senderIp, sourceEdge, msgLanePos, maxDistance);
 	}
 	
-	private void distributeMessage(EmbeddedMessage msg, InetAddress senderIp, String sourceEdge, String nextEdge, double lanePos, double maxDistance) {
-		List<List<String>> routes = graph.getRoutesLeadingTo(nextEdge, maxDistance);
-//		List<List<String>> routes = graph.getRoutesStartingFrom(sourceEdge, maxDistance);
+	private void distributeMessage(EmbeddedMessage msg, InetAddress senderIp, String sourceEdge, double lanePos, double maxDistance) {
+		//TODO All routes leading to all next edges within distance
+		Set<String> nextEdges = graph.getNextEdges(sourceEdge);
+		List<List<String>> routes = new ArrayList<List<String>>(); 
 		Set<String> routesEdges = new HashSet<String>();
+		
+		// Get all possible next routes
+		for (String nextEdge: nextEdges) {
+			routes.addAll(graph.getRoutesLeadingTo(nextEdge, maxDistance));
+		}
 		
 		// Get a set of all edges within range
 		for (List<String> list: routes) {
@@ -175,7 +181,7 @@ public class TbusGeoserver extends RoadSideUnitApplication {
 				// No vehicles on edge
 				continue;
 			}
-			if (nextEdge.equals(edge)) {
+			if (nextEdges.contains(edge)) {
 				// Next edge, vehicles here drive normally
 				continue;
 			}
