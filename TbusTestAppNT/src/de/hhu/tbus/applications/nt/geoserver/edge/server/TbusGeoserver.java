@@ -36,6 +36,7 @@ import de.hhu.tbus.util.DoubleAccessMap;
 
 /**
  * @author bialon
+ * @author Norbert Goebel
  *
  */
 public class TbusGeoserver extends RoadSideUnitApplication {
@@ -158,44 +159,26 @@ public class TbusGeoserver extends RoadSideUnitApplication {
 		distributeMessage(embeddedMsg, senderIp, sourceEdge, msgLanePos, maxDistance);
 	}
 
+	/**
+	 * send a distributet Message to all vehicles, which might cross any possible emergency vehichles route in approximately maxDistance distance
+	 * @param msg
+	 * @param senderIp
+	 * @param sourceEdge
+	 * @param lanePos
+	 * @param maxDistance
+	 */
 	private void distributeMessage(EmbeddedMessage msg, InetAddress senderIp, String sourceEdge, double lanePos, double maxDistance) {
-		//TODO All routes leading to all next edges within distance
 		Set<String> nextEdges = graph.getNextEdges(sourceEdge);
 		Set<String> evEdges = new HashSet<String>();
-		List<List<String>> evRoutes = new ArrayList<List<String>>(); 
-		List<List<String>> foreignRoutes = new ArrayList<List<String>>(); 
+		List<List<String>> evRoutes = new ArrayList<List<String>>();  
 		Set<String> routesEdges = new HashSet<String>();
-
-//		// Get all possible routes leading to nextedges
-//		for (String nextEdge: nextEdges) {
-//			foreignRoutes.addAll(graph.getRoutesLeadingTo(nextEdge, maxDistance));
-//		}
-//
-//		//get all possible routes with length 20m the ev can continue on
-//		for (String nextEdge: nextEdges) {
-//			evRoutes.addAll(graph.getRoutesStartingFrom(sourceEdge, maxDistance));
-//		}
-//
-//		// Get a set of all edges within range
-//		for (List<String> list: foreignRoutes) {
-//			routesEdges.addAll(list);
-//		}
-//
-//		//remove the nextEdges from the routeEdges, else the simulation might stall as a vehicle directly in front of the ev might be stopped
-//		for (String nextEdge: nextEdges) {
-//			routesEdges.remove(nextEdge);
-//		}
-//		
-//		routesEdges.remove(sourceEdge);
-//
-//		//remove the nextEdges from the routeEdges, else the simulation might stall as a vehicle directly in front of the ev might be stopped
-//		for (List<String> list: evRoutes) {
-//			routesEdges.removeAll(list);
-//		}
-
+		
+		//correct maxdistance by the rest of the current edges length
+		double remainDistance = maxDistance - graph.getEdgeLength(sourceEdge) + lanePos;
+		if (remainDistance < 0.0) remainDistance = 0.0; 
 		
 		//get all possible routes with length maxdistance the emergency vehicle can continue on
-		evRoutes.addAll(graph.getRoutesStartingFrom(sourceEdge, maxDistance));
+		evRoutes.addAll(graph.getRoutesStartingFrom(sourceEdge, remainDistance));
 		
 		//now get all the edges of the next routes with max distance of the ev
 		for (List<String> list: evRoutes) {
@@ -211,8 +194,7 @@ public class TbusGeoserver extends RoadSideUnitApplication {
 		routesEdges.removeAll(evEdges);
 		
 		//now routeEdges should contain edges that directly lead to possible ev edges
-		
-		// Forward the message to all vehicles on the mentioned above edges
+		// thus forward the message to all vehicles on routeEdges
 		for (String edge: routesEdges) {
 			Set<InetAddress> destinations;
 			if ((destinations = ipToEdge.getKeys(edge)) == null) {

@@ -25,6 +25,7 @@ import org.xml.sax.SAXException;
 
 /**
  * @author bialon
+ * @author Norbert Goebel
  *
  */
 public class TbusRoadGraph {
@@ -136,6 +137,15 @@ public class TbusRoadGraph {
 	 */
 	private SumoEdge getEdge(String id) {
 		return idToEdge.get(id);
+	}
+	
+	/**
+	 * Return the graph's edge length identified by edgeid
+	 * @param id Edge id
+	 * @return Graph internal edge
+	 */
+	public double getEdgeLength(String id) {
+		return idToEdge.get(id).getWeight();
 	}
 	
 	/**
