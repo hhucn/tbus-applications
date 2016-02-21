@@ -138,9 +138,31 @@ public class TbusRoadGraph {
 		return idToEdge.get(id);
 	}
 	
+	/**
+	 * Return a set of outgoing edges from the current edges endvertex
+	 * @param currentEdge
+	 * @return set of edges
+	 */
 	public synchronized Set<String> getNextEdges(String currentEdge) {
 		String currentEdgeEnd = graph.getEdgeTarget(getEdge(currentEdge));
 		Set<SumoEdge> edges = graph.outgoingEdgesOf(currentEdgeEnd);
+		
+		Set<String> edgeIds = new HashSet<String>();
+		for (SumoEdge edge: edges) {
+			edgeIds.add(edge.getId());
+		}
+		
+		return edgeIds;
+	}
+	
+	/**
+	 * Return a set of incoming edges to the current edges endvertex
+	 * @param currentEdge
+	 * @return set of edges
+	 */
+	public synchronized Set<String> getIncomingEdges(String currentEdge) {
+		String currentEdgeEnd = graph.getEdgeTarget(getEdge(currentEdge));
+		Set<SumoEdge> edges = graph.incomingEdgesOf(currentEdgeEnd);
 		
 		Set<String> edgeIds = new HashSet<String>();
 		for (SumoEdge edge: edges) {

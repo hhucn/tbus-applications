@@ -415,6 +415,8 @@ public class TbusGeoclient extends VehicleApplication {
 				"TbusGeoClient constructor called at "
 						+ getOperatingSystem().getSimulationTime() + " for id "
 						+ getOperatingSystem().getId());
+		
+		getLog().info("Got IP-Address :"+getOperatingSystem().generateSourceAddressContainer().getSourceAddress().getIPv4Address().toString());
 	}
 
 	/**
