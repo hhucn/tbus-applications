@@ -154,7 +154,16 @@ public class TbusRoadGraph {
 	 * @return set of edges
 	 */
 	public synchronized Set<String> getNextEdges(String currentEdge) {
-		String currentEdgeEnd = graph.getEdgeTarget(getEdge(currentEdge));
+		if (currentEdge == null) {
+			return new HashSet<String>();
+		}
+		
+		SumoEdge currentSumoEdge = getEdge(currentEdge);
+		if (currentSumoEdge == null) {
+			return new HashSet<String>();
+		}
+		
+		String currentEdgeEnd = graph.getEdgeTarget(currentSumoEdge);
 		Set<SumoEdge> edges = graph.outgoingEdgesOf(currentEdgeEnd);
 		
 		Set<String> edgeIds = new HashSet<String>();
@@ -171,7 +180,16 @@ public class TbusRoadGraph {
 	 * @return set of edges
 	 */
 	public synchronized Set<String> getIncomingEdges(String currentEdge) {
-		String currentEdgeEnd = graph.getEdgeTarget(getEdge(currentEdge));
+		if (currentEdge == null) {
+			return new HashSet<String>();
+		}
+		
+		SumoEdge currentSumoEdge = getEdge(currentEdge);
+		if (currentSumoEdge == null) {
+			return new HashSet<String>();
+		}
+		
+		String currentEdgeEnd = graph.getEdgeTarget(currentSumoEdge);
 		Set<SumoEdge> edges = graph.incomingEdgesOf(currentEdgeEnd);
 		
 		Set<String> edgeIds = new HashSet<String>();

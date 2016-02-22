@@ -29,7 +29,7 @@ public class EmergencyWarningAppConfiguration implements Serializable {
 	/**
 	 * Interval for message sending
 	 */
-	public long interval = 100_000_000L;
+	public long interval = 1_000_000_000L;
 	
 	/**
 	 * Message timeout

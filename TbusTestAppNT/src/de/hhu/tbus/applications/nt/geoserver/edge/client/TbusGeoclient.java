@@ -307,16 +307,20 @@ public class TbusGeoclient extends VehicleApplication {
 				long delay;
 				if (msg instanceof EmergencyWarningMessage) {
 					// Use the original send timestamp and not the forwarded one
-					delay = now
+					long totalDelay = now
 							- ((EmergencyWarningMessage) msg).originalTimestamp;
+					delay = now - ((TbusLogMessage) msg).getTimestamp();
+					getLog().info(
+							source + " -> " + dest + " at " + now + " delay "
+									+ delay + " totalDelay " + totalDelay
+									+ ": " + ((TbusLogMessage) msg).getLog());
 				} else {
 					delay = now - ((TbusLogMessage) msg).getTimestamp();
+					getLog().info(
+							source + " -> " + dest + " at " + now + " delay "
+									+ delay + ": "
+									+ ((TbusLogMessage) msg).getLog());
 				}
-
-				getLog().info(
-						source + " -> " + dest + " at " + now + " delay "
-								+ delay + ": "
-								+ ((TbusLogMessage) msg).getLog());
 			} else {
 				getLog().info(
 						source + " -> " + dest + " at " + now + ": "

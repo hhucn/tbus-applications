@@ -43,7 +43,7 @@ public class TbusGeoserver extends RoadSideUnitApplication {
 	private static DestinationAddress address = null;
 	private DoubleAccessMap<InetAddress, String> ipToEdge = new DoubleAccessMap<InetAddress, String>();
 	private HashMap<InetAddress, Double> ipToLanePos = new HashMap<InetAddress, Double>();
-	private Set<InetAddress> activeEmergencyVehicles = new HashSet<InetAddress>();
+	private HashMap<InetAddress, GeoDistributeMessage> activeEmergencyMessages = new HashMap<InetAddress, GeoDistributeMessage>();
 	private TbusRoadGraph graph;
 
 	private TbusGeoServerConfiguration config;
@@ -132,15 +132,18 @@ public class TbusGeoserver extends RoadSideUnitApplication {
 	}
 
 	private void handleUpdateMessage(GeoUpdateMessage msg) {		
-		InetAddress sender = msg.getRouting().getSourceAddressContainer().getSourceAddress().getIPv4Address();
+		InetAddress senderIp = msg.getRouting().getSourceAddressContainer().getSourceAddress().getIPv4Address();
 		String edge = msg.getRoadId();
 		double lanePos = msg.getLanePos();
 
-		ipToEdge.put(sender, edge);
-		ipToLanePos.put(sender, lanePos);
+		ipToEdge.put(senderIp, edge);
+		ipToLanePos.put(senderIp, lanePos);
 
-		if (activeEmergencyVehicles.contains(sender)) {
+		if (activeEmergencyVehicles.contains(senderIp)) {
 			// Distribute updated EV message
+			GeoDistributeMessage distributeMsg = activeEmergencyMessages.get(senderIp);
+			
+			distributeMessage(distributeMsg.getMessage(), senderIp, edge, lanePos, distributeMsg.getRadius(), msg.getTimestamp());
 		}
 	}
 
@@ -154,20 +157,19 @@ public class TbusGeoserver extends RoadSideUnitApplication {
 
 		activeEmergencyVehicles.add(senderIp);
 
-		//TODO: Inform sender (ACK) of message?
-
-		distributeMessage(embeddedMsg, senderIp, sourceEdge, msgLanePos, maxDistance);
+		// Inform sender of message by sending message back (ACK)
+		distributeMessage(embeddedMsg, senderIp, sourceEdge, msgLanePos, maxDistance, msg.getTimestamp());
 	}
 
 	/**
-	 * send a distributet Message to all vehicles, which might cross any possible emergency vehichles route in approximately maxDistance distance
+	 * send a distribute Message to all vehicles, which might cross any possible emergency vehicles route in approximately maxDistance distance
 	 * @param msg
 	 * @param senderIp
 	 * @param sourceEdge
 	 * @param lanePos
 	 * @param maxDistance
 	 */
-	private void distributeMessage(EmbeddedMessage msg, InetAddress senderIp, String sourceEdge, double lanePos, double maxDistance) {
+	private void distributeMessage(EmbeddedMessage msg, InetAddress senderIp, String sourceEdge, double lanePos, double maxDistance, long originalTimestamp) {
 		Set<String> nextEdges = graph.getNextEdges(sourceEdge);
 		Set<String> evEdges = new HashSet<String>();
 		List<List<String>> evRoutes = new ArrayList<List<String>>();  
@@ -217,12 +219,12 @@ public class TbusGeoserver extends RoadSideUnitApplication {
 				}
 
 				getLog().info("Forwarding message to " + destinationIp + " on edge " + edge);
-				forwardEmbeddedMessage(msg, destinationIp);
+				forwardEmbeddedMessage(msg, destinationIp, originalTimestamp);
 			}
 		}
 	}
 
-	private void forwardEmbeddedMessage(EmbeddedMessage msg, InetAddress destinationIp) {
+	private void forwardEmbeddedMessage(EmbeddedMessage msg, InetAddress destinationIp, long originalTimestamp) {
 		OperatingSystem os = getOperatingSystem();
 
 		DestinationAddressContainer dac = DestinationAddressContainer.createTopologicalDestinationAddressAdHoc(new TopologicalDestinationAddress(new DestinationAddress(destinationIp), 1));
@@ -231,6 +233,8 @@ public class TbusGeoserver extends RoadSideUnitApplication {
 		MessageRouting routing = new MessageRouting(dac, sac);
 
 		EmbeddedMessage forwardMsg = msg.copy(routing, os.getSimulationTime());
+		forwardMsg.originalTimestamp = originalTimestamp;
+		
 		os.sendV2XMessage(forwardMsg);
 
 		getLog().info("Forwarded GeoDistributeMessage " + forwardMsg.getId() + " content " + forwardMsg.getClass() + " to " + destinationIp + " at " + getOperatingSystem().getSimulationTime());
