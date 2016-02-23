@@ -139,7 +139,7 @@ public class TbusGeoserver extends RoadSideUnitApplication {
 		ipToEdge.put(senderIp, edge);
 		ipToLanePos.put(senderIp, lanePos);
 
-		if (activeEmergencyVehicles.contains(senderIp)) {
+		if (activeEmergencyMessages.contains(senderIp)) {
 			// Distribute updated EV message
 			GeoDistributeMessage distributeMsg = activeEmergencyMessages.get(senderIp);
 			
@@ -155,7 +155,7 @@ public class TbusGeoserver extends RoadSideUnitApplication {
 
 		EmbeddedMessage embeddedMsg = msg.getMessage();
 
-		activeEmergencyVehicles.add(senderIp);
+		activeEmergencyMessages.put(senderIp, msg);
 
 		// Inform sender of message by sending message back (ACK)
 		distributeMessage(embeddedMsg, senderIp, sourceEdge, msgLanePos, maxDistance, msg.getTimestamp());
