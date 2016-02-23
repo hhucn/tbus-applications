@@ -108,7 +108,7 @@ public class TbusGeoserver extends TbusGeoserverBase {
 		ipToEdge.put(senderIp, edge);
 		ipToLanePos.put(senderIp, lanePos);
 
-		if (activeEmergencyMessages.contains(senderIp)) {
+		if (activeEmergencyMessages.containsKey(senderIp)) {
 			// Distribute updated EV message
 			GeoDistributeMessage distributeMsg = activeEmergencyMessages.get(senderIp);
 			

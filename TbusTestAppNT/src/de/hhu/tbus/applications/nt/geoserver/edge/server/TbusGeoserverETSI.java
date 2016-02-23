@@ -38,7 +38,7 @@ import de.hhu.tbus.util.DoubleAccessMap;
  * @author bialon
  *
  */
-public class TbusGeoserver extends TbusGeoServerBase {
+public class TbusGeoserverETSI extends TbusGeoserverBase {
 	private DoubleAccessMap<InetAddress, String> ipToEdge = new DoubleAccessMap<InetAddress, String>();
 	private HashMap<InetAddress, Double> ipToLanePos = new HashMap<InetAddress, Double>();
 	private TbusRoadGraph graph;
