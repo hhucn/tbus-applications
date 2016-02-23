@@ -1,5 +1,7 @@
 package de.hhu.tbus.applications.nt.geoserver.edge.server;
 
+import java.net.InetAddress;
+
 import com.dcaiti.vsimrti.fed.applicationNT.ambassador.simulationUnit.applications.RoadSideUnitApplication;
 import com.dcaiti.vsimrti.fed.applicationNT.ambassador.simulationUnit.operatingSystem.OperatingSystem;
 import com.dcaiti.vsimrti.rti.eventScheduling.Event;
@@ -14,13 +16,10 @@ import com.dcaiti.vsimrti.rti.objects.v2x.ReceivedV2XMessage;
 import com.dcaiti.vsimrti.rti.objects.v2x.UnableToSendV2XMessage;
 import com.dcaiti.vsimrti.rti.objects.v2x.V2XMessage;
 
+import de.hhu.tbus.applications.nt.geoserver.message.EmbeddedMessage;
+
 public class TbusGeoserverBase extends RoadSideUnitApplication {
 	private static DestinationAddress address = null;
-	
-	static {
-		// Set own IP address
-		address = new DestinationAddress(getOperatingSystem().getAddress().getIPv4Address());
-	}
 	
 	/**
 	 * Returns the GeoServer's address
@@ -34,7 +33,26 @@ public class TbusGeoserverBase extends RoadSideUnitApplication {
 	 * @see com.dcaiti.vsimrti.fed.applicationNT.ambassador.simulationUnit.applications.Application#setUp()
 	 */
 	public void setUp() {
+		if (address == null) {
+			// Set own IP address
+			address = new DestinationAddress(getOperatingSystem().getAddress().getIPv4Address());
+		}
+	}
+	
+	protected void forwardEmbeddedMessage(EmbeddedMessage msg, InetAddress destinationIp, long originalTimestamp) {
+		OperatingSystem os = getOperatingSystem();
+
+		DestinationAddressContainer dac = DestinationAddressContainer.createTopologicalDestinationAddressAdHoc(new TopologicalDestinationAddress(new DestinationAddress(destinationIp), 1));
+		SourceAddressContainer sac = os.generateSourceAddressContainer();
+
+		MessageRouting routing = new MessageRouting(dac, sac);
+
+		EmbeddedMessage forwardMsg = msg.copy(routing, os.getSimulationTime());
+		forwardMsg.originalTimestamp = originalTimestamp;
 		
+		os.sendV2XMessage(forwardMsg);
+
+		getLog().info("Forwarded GeoDistributeMessage " + forwardMsg.getId() + " content " + forwardMsg.getClass() + " to " + destinationIp + " at " + getOperatingSystem().getSimulationTime());
 	}
 	
 	/**

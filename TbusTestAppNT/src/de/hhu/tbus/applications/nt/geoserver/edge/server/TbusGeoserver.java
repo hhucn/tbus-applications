@@ -193,22 +193,6 @@ public class TbusGeoserver extends TbusGeoserverBase {
 		}
 	}
 
-	private void forwardEmbeddedMessage(EmbeddedMessage msg, InetAddress destinationIp, long originalTimestamp) {
-		OperatingSystem os = getOperatingSystem();
-
-		DestinationAddressContainer dac = DestinationAddressContainer.createTopologicalDestinationAddressAdHoc(new TopologicalDestinationAddress(new DestinationAddress(destinationIp), 1));
-		SourceAddressContainer sac = os.generateSourceAddressContainer();
-
-		MessageRouting routing = new MessageRouting(dac, sac);
-
-		EmbeddedMessage forwardMsg = msg.copy(routing, os.getSimulationTime());
-		forwardMsg.originalTimestamp = originalTimestamp;
-		
-		os.sendV2XMessage(forwardMsg);
-
-		getLog().info("Forwarded GeoDistributeMessage " + forwardMsg.getId() + " content " + forwardMsg.getClass() + " to " + destinationIp + " at " + getOperatingSystem().getSimulationTime());
-	}
-
 	/**
 	 * @see com.dcaiti.vsimrti.fed.applicationNT.ambassador.simulationUnit.applications.Application#setUp()
 	 */
