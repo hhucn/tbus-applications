@@ -5,6 +5,7 @@ package de.hhu.tbus.applications.nt.geoserver.edge.server;
 
 import java.io.File;
 import java.net.InetAddress;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -138,6 +139,26 @@ public class TbusGeoserver extends RoadSideUnitApplication {
 	}
 	
 	private void handleDistributeMessage(GeoDistributeMessage msg) {		
+		InetAddress senderIp = msg.getRouting().getSourceAddressContainer().getSourceAddress().getIPv4Address();
+		String sourceEdge = msg.getRoadId();
+		double maxDistance = msg.getRadius();
+		double msgLanePos = msg.getLanePos();
+
+		EmbeddedMessage embeddedMsg = msg.getMessage();
+
+		// Inform sender of message by sending message back (ACK)
+		distributeMessage(embeddedMsg, senderIp, sourceEdge, msgLanePos, maxDistance, msg.getTimestamp());
+	}
+	
+	/**
+	 * send a distribute Message to all vehicles, which might cross any possible emergency vehicles route in approximately maxDistance distance
+	 * @param msg
+	 * @param senderIp
+	 * @param sourceEdge
+	 * @param lanePos
+	 * @param maxDistance
+	 */
+	private void distributeMessage(EmbeddedMessage msg, InetAddress senderIp, String sourceEdge, double lanePos, double maxDistance, long originalTimestamp) {
 		Set<String> nextEdges = graph.getNextEdges(sourceEdge);
 		Set<String> evEdges = new HashSet<String>();
 		List<List<String>> evRoutes = new ArrayList<List<String>>();  
@@ -187,7 +208,7 @@ public class TbusGeoserver extends RoadSideUnitApplication {
 				}
 
 				getLog().info("Forwarding message to " + destinationIp + " on edge " + edge);
-				forwardEmbeddedMessage(msg, destinationIp);
+				forwardEmbeddedMessage(msg, destinationIp, originalTimestamp);
 			}
 		}
 	}
