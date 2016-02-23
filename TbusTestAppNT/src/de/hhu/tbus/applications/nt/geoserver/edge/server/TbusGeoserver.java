@@ -39,8 +39,7 @@ import de.hhu.tbus.util.DoubleAccessMap;
  * @author Norbert Goebel
  *
  */
-public class TbusGeoserver extends RoadSideUnitApplication {
-	private static DestinationAddress address = null;
+public class TbusGeoserver extends TbusGeoserverBase {
 	private DoubleAccessMap<InetAddress, String> ipToEdge = new DoubleAccessMap<InetAddress, String>();
 	private HashMap<InetAddress, Double> ipToLanePos = new HashMap<InetAddress, Double>();
 	private HashMap<InetAddress, GeoDistributeMessage> activeEmergencyMessages = new HashMap<InetAddress, GeoDistributeMessage>();
@@ -57,36 +56,6 @@ public class TbusGeoserver extends RoadSideUnitApplication {
 			config = new TbusGeoServerConfiguration();
 		}
 	}
-
-	/**
-	 * @see com.dcaiti.vsimrti.rti.eventScheduling.EventProcessor#processEvent(com.dcaiti.vsimrti.rti.eventScheduling.Event)
-	 */
-	@Override
-	public void processEvent(Event evt) throws Exception {}
-
-	/**
-	 * @see com.dcaiti.vsimrti.fed.applicationNT.ambassador.simulationUnit.applications.Application#afterGetAndResetUserTaggedValue()
-	 */
-	@Override
-	public void afterGetAndResetUserTaggedValue() {}
-
-	/**
-	 * @see com.dcaiti.vsimrti.fed.applicationNT.ambassador.simulationUnit.applications.Application#beforeGetAndResetUserTaggedValue()
-	 */
-	@Override
-	public void beforeGetAndResetUserTaggedValue() {}
-
-	/**
-	 * @see com.dcaiti.vsimrti.fed.applicationNT.ambassador.simulationUnit.applications.Application#onApplicationSpecificMessage(com.dcaiti.vsimrti.rti.messages.ApplicationSpecificMessage)
-	 */
-	@Override
-	public void onApplicationSpecificMessage(ApplicationSpecificMessage asm) {}
-
-	/**
-	 * @see com.dcaiti.vsimrti.fed.applicationNT.ambassador.simulationUnit.applications.Application#onSumoTraciByteArrayMessageResponse(com.dcaiti.vsimrti.rti.objects.SumoTraciByteArrayMessageResponse)
-	 */
-	@Override
-	public void onSumoTraciByteArrayMessageResponse(SumoTraciByteArrayMessageResponse stbamr) {}
 
 	/**
 	 * @see com.dcaiti.vsimrti.fed.applicationNT.ambassador.simulationUnit.applications.Application#receiveV2XMessage(com.dcaiti.vsimrti.rti.objects.v2x.ReceivedV2XMessage)
@@ -245,8 +214,7 @@ public class TbusGeoserver extends RoadSideUnitApplication {
 	 */
 	@Override
 	public void setUp() {
-		// Set own IP address
-		address = new DestinationAddress(getOperatingSystem().getAddress().getIPv4Address());
+		super.setUp();
 
 		initConfig();
 
@@ -254,21 +222,5 @@ public class TbusGeoserver extends RoadSideUnitApplication {
 		graph.parse(new File(config.sumoNetFile));
 
 		getLog().info("Parsed SUMO net file " + config.sumoNetFile);
-	}
-
-	/**
-	 * @see com.dcaiti.vsimrti.fed.applicationNT.ambassador.simulationUnit.applications.Application#tearDown()
-	 */
-	@Override
-	public void tearDown() {}
-
-	/**
-	 * @see com.dcaiti.vsimrti.fed.applicationNT.ambassador.simulationUnit.applications.Application#unableToSendV2XMessage(com.dcaiti.vsimrti.rti.objects.v2x.UnableToSendV2XMessage)
-	 */
-	@Override
-	public void unableToSendV2XMessage(UnableToSendV2XMessage msg) {}
-
-	public static final DestinationAddress getAddress() {
-		return address;
 	}
 }
